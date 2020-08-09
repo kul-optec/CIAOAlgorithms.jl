@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 using StoInc
 using ProximalOperators
-using RecursiveArrayTools: ArrayPartition, unpack
+# using RecursiveArrayTools: ArrayPartition, unpack
 using ProximalAlgorithms
 using Random
 

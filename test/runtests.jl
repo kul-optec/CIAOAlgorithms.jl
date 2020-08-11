@@ -1,6 +1,4 @@
 using Test
 
-include("test_code_consistency.jl")
-include("test_minibatch.jl")
-# include("test_SVRG.jl")
-
+include("test_lasso.jl")
+include("test_logistic_l1.jl")

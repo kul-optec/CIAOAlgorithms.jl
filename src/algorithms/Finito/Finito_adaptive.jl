@@ -1,32 +1,31 @@
 struct FINITO_adaptive_iterable{R<:Real,Tx,Tf,Tg}
-    f::Array{Tf}			# smooth term  
-    g::Tg          			# nonsmooth term 
-    x0::Tx            		# initial point
-    N::Int64        		# number of data points in the finite sum problem 
-    L::Maybe{Union{Array{R},R}}  # Lipschitz moduli of nabla f_i    
-    α::R          			# in (0, 1), e.g.: 0.99
-    tol::R 					# coordinate-wise tolerance
-    tol_ada::R 				# tolerance for the adaptive part 
-    sweeping::Int 			# update strategy: 1 for rand, 2 for cyclic, 3 for shuffled cyclic
+    f::Array{Tf}            # smooth term  
+    g::Tg                   # nonsmooth term 
+    x0::Tx                  # initial point
+    N::Int64                # # of data points in the finite sum problem 
+    L::Maybe{Union{Array{R},R}} # Lipschitz moduli of nabla f_i    
+    tol::R                  # coordinate-wise tolerance
+    tol_b::R                # tolerance for the adaptive part 
+    sweeping::Int           # 1, 2, 3 for rand, cyclic, shuffled
+    α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_adaptive_state{R<:Real,Tx}  
-    p::Array{Tx}			# table of x_j stacked as array of arrays	
-    ∇f::Array{Tx} 			# table of gradients 
-    γ::Array{R}         	# stepsize parameter 
-    hat_γ::R  				# average γ 
-    indr::Array{Int64,1} 	# ind set from which the algorithm chooses a coordinate 
-    fi_x::Array{R,1}		# value of smooth term
-    av::Tx  				# the running average
-    z::Tx 					# zbar   
+mutable struct FINITO_adaptive_state{R<:Real,Tx}
+    p::Array{Tx}            # table of x_j stacked as array of arrays	
+    ∇f::Array{Tx}           # table of gradients 
+    γ::Array{R}             # stepsize parameter 
+    hat_γ::R                # average γ 
+    indr::Array{Int64,1}    # coordinate selection index set 
+    fi_x::Array{R,1}        # value of smooth term
+    av::Tx                  # the running average
+    z::Tx                   # zbar   
     # some extra placeholders 
-    τ::R 					# stepsize for linesearch 
-    res::Tx 				# residual (to be decided)
-    γ_b::R  				#  
-    tot_bt::R 				# placeholder for number of gradients used to estimate L_i 
-    ind::Array{Int64,1} 	# list of remaining coordinates (used for termination)
-    idx::Int64  			# idx to be updated  
-    idxr::Int64 			# running idx
+    τ::R                    # stepsize for linesearch 
+    res::Tx                 # residual (for termination) 	
+    γ_b::R
+    ind::Array{Int64,1}     # remaining coordinates (for termination)
+    idx::Int64              # idx to be updated  
+    idxr::Int64             # running idx
 end
 
 function FINITO_adaptive_state(
@@ -48,32 +47,31 @@ function FINITO_adaptive_state(
         fi_x,
         av,
         z,
-        1.0,
+        R(1.0),
         zero(av),
-        0.0,
-        0.0,
+        R(0.0),
         copy(indr),
         Int(0),
         Int(0),
     )
 end
 
-function Base.iterate(iter::FINITO_adaptive_iterable{R,Tx}) where {R,Tx}  
+function Base.iterate(iter::FINITO_adaptive_iterable{R,Tx}) where {R,Tx}
     N = iter.N
     ind = collect(1:N) # full index set 
     # computing the gradients and updating the table p 
-    p = Vector{Vector{Float64}}(undef, 0) 
+    p = Vector{Tx}(undef, 0)
     ∇f = fill(iter.x0, (N,))
-    fi_x = rand(N)    	# compute the cost for the case of lineasearch 
-    for i = 1:N			
-        ∇f[i], fi_x[i] = gradient(iter.f[i], iter.x0)  
+    fi_x = zeros(R, N)    # compute the cost for the case of lineasearch 
+    for i = 1:N
+        ∇f[i], fi_x[i] = gradient(iter.f[i], iter.x0)
         push!(p, copy(iter.x0)) # table of x_i
     end
     # updating the stepsize 
-    γ = zeros(N)
+    γ = zeros(R, N)
     for i = 1:N
         L_int = zeros(N)
-        xeps = iter.x0 .+ one(R)   
+        xeps = iter.x0 .+ one(R)
         grad_f_xeps, f_xeps = gradient(iter.f[i], xeps)
         nmg = norm(grad_f_xeps - ∇f[i])
         t = 1
@@ -124,12 +122,11 @@ function Base.iterate(
         @. state.res = state.z - state.p[state.idxr]
         # backtrack γ (warn if γ gets too small)   
         while true
-            if state.γ[state.idxr] < iter.tol_ada / iter.N
+            if state.γ[state.idxr] < iter.tol_b / iter.N
                 @warn "parameter `γ` became too small ($(state.γ))"
                 return nothing
             end
             ~, fi_z = gradient(iter.f[state.idxr], state.z)
-            state.tot_bt += 1
             fi_model =
                 state.fi_x[state.idxr] +
                 real(dot(state.∇f[state.idxr], state.res)) +
@@ -144,7 +141,7 @@ function Base.iterate(
             state.av ./= state.hat_γ
             @. state.av += state.p[state.idxr] / state.γ[state.idxr]
             @. state.av -= state.p[state.idxr] / state.γ_b
-            state.hat_γ = 1 / (1 / state.hat_γ + 1 / state.γ[state.idxr] - 1 / state.γ_b) 
+            state.hat_γ = 1 / (1 / state.hat_γ + 1 / state.γ[state.idxr] - 1 / state.γ_b)
             state.av .*= state.hat_γ
             prox!(state.z, iter.g, state.av, state.hat_γ) # compute prox(barz)    
             @. state.res = state.z - state.p[state.idxr]
@@ -163,7 +160,7 @@ function Base.iterate(
     @. state.av += (state.hat_γ / state.γ[state.idxr]) * (state.z .- state.p[state.idxr])
     state.p[state.idxr] .= state.z  #update x_i
     @. state.av += (state.hat_γ / iter.N) * state.∇f[state.idxr]
-    state.fi_x[state.idxr] = gradient!(state.∇f[state.idxr], iter.f[state.idxr], state.z) 
+    state.fi_x[state.idxr] = gradient!(state.∇f[state.idxr], iter.f[state.idxr], state.z)
     @. state.av -= (state.hat_γ / iter.N) * state.∇f[state.idxr]
     prox!(state.z, iter.g, state.av, state.hat_γ)
 
@@ -172,6 +169,5 @@ end
 
 
 #TODO list
-## fundamental
 #### ensuring envelope is lower bounded
 #### the initial guess for L may be modified

@@ -156,18 +156,18 @@ If `solver = Finito(args...)`, then
 
     problem = Finito_problem(solver, F, g, x0, N, L)
 
-    instantiate a Julia struct with the following fields: 
+    instantiate a struct `problem` with the following fields: 
         * `sol`:    the current output (initially equal to x0) 
-        * `iter`:   the appropriate finito iterator 
-        * `state = (Iteration number, parameters)`: the internal state of the solver  
+        * `iter`:   the appropriate finito iterator
+        * `cnt`:    iteration number
+        * `state`: the internal state of the solver   
 
 To perform one iteration of the algorithm specified with the solver run
 
     update!(problem)
 
-The fields of `problem` are updated accordingly.
-
-Note that irrelevant fields of the solver (maxit, verbose, freq) are ignored in this mode.      
+    The fields of `problem` are updated accordingly.
+    Note that irrelevant fields of the solver (maxit, verbose, freq) are ignored in this mode.      
 """
 
 

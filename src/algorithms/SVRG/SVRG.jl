@@ -106,16 +106,16 @@ SVRG(::Type{R}; kwargs...) where {R} = SVRG{R}(; kwargs...)
 SVRG(; kwargs...) = SVRG(Float64; kwargs...)
 
 
-
 """
 If `solver = SVRG(args...)`, then 
 
     problem = SVRG_problem(solver, F, g, x0, N, L)
 
-    instantiate a Julia struct with the following fields: 
+    instantiate a struct `problem` with the following fields: 
         * `sol`:    the current output (initially equal to x0) 
-        * `iter`:   the SVRG iterator 
-        * `state = (Iteration number, parameters)`: the internal state of the solver  
+        * `iter`:   the appropriate finito iterator
+        * `cnt`:    iteration number
+        * `state`: the internal state of the solver   
 
 To perform one iteration of the algorithm specified with the solver run
 

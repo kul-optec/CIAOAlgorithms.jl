@@ -2,25 +2,25 @@ struct FINITO_LFinito_iterable{R<:Real,Tx,Tf,Tg}
     f::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
-    N::Int64                # # of data points in the finite sum problem 
+    N::Int                    # of data points in the finite sum problem 
     L::Maybe{Union{Array{R},R}}  # Lipschitz moduli of nabla f_i    
     γ::Maybe{Union{Array{R},R}}  # stepsizes 
-    sweeping::Int           # to only use one stepsize γ
-    batch::Int64            # batch size
+    sweeping::Int8             # to only use one stepsize γ
+    batch::Int                # batch size
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_LFinito_state{R<:Real,Tx}
+mutable struct FINITO_LFinito_state{R<:Real,Tx} <: AbstractFinitoState
     γ::Array{R}             # stepsize parameter
     hat_γ::R                # average γ 
     av::Tx                  # the running average
-    ind::Array{Array{Int64}}    # running index set
-    d::Int64                # number of batches 
+    ind::Array{Array{Int}}  # running index set
+    d::Int                  # number of batches 
     # some extra placeholders 
     z::Tx
     ∇f_temp::Tx             # placeholder for gradients 
     z_full::Tx
-    inds::Array{Int64}      # needed for shuffled only! 
+    inds::Array{Int}        # needed for shuffled only! 
 end
 
 function FINITO_LFinito_state(γ::Array{R}, hat_γ::R, av::Tx, ind, d) where {R,Tx}
@@ -41,14 +41,12 @@ function Base.iterate(iter::FINITO_LFinito_iterable{R,Tx}) where {R,Tx}
     N = iter.N
     r = iter.batch # batch size 
     # create index sets 
-    ind = Vector{Vector{Int64}}(undef, 0)
-    d = Int64(floor(N / r))
+    ind = Vector{Vector{Int}}(undef, 0)
+    d = Int(floor(N / r))
     for i = 1:d
         push!(ind, collect(r*(i-1)+1:i*r))
     end
-    if r * d < N
-        push!(ind, collect(r*d+1:N))
-    end
+    r * d < N && push!(ind, collect(r*d+1:N))
     # updating the stepsize 
     if iter.γ === nothing
         if iter.L === nothing
@@ -62,7 +60,7 @@ function Base.iterate(iter::FINITO_LFinito_iterable{R,Tx}) where {R,Tx}
             end
         end
     else
-        isa(iter.γ, R) ? (γ = fill(iter.γ, (N,))) : (γ = iter.γ) #provided γ
+        isa(iter.γ, R) ? (γ = fill(iter.γ, (N,))) : (γ = iter.γ) # provided γ
     end
     #initializing the vectors 
     hat_γ = 1 / sum(1 ./ γ)
@@ -73,6 +71,7 @@ function Base.iterate(iter::FINITO_LFinito_iterable{R,Tx}) where {R,Tx}
         av .-= ∇f
     end
     state = FINITO_LFinito_state(γ, hat_γ, av, ind, cld(N, r))
+    
     return state, state
 end
 
@@ -87,9 +86,8 @@ function Base.iterate(
         gradient!(state.∇f_temp, iter.f[i], state.z_full) # update the gradient
         state.av .-= (state.hat_γ / iter.N) .* state.∇f_temp
     end
-    if iter.sweeping == 3  # shuffled
-        state.inds = randperm(state.d)
-    end
+    iter.sweeping == 3 && (state.inds = randperm(state.d)) # shuffled
+
     for j in state.inds
         prox!(state.z, iter.g, state.av, state.hat_γ)
         for i in state.ind[j]
@@ -100,8 +98,6 @@ function Base.iterate(
             state.av .+= (state.hat_γ / state.γ[i]) .* (state.z .- state.z_full)
         end
     end
+
     return state, state
 end
-
-
-#TODO list

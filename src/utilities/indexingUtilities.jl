@@ -1,4 +1,4 @@
-function findfst(ind::Array{Int64}, idx::Int64)
+function findfst(ind::Array{Int}, idx::Int)
     x = falses(length(ind))
     for k in eachindex(ind)
         if ind[k] == idx

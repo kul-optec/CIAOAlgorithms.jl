@@ -2,30 +2,30 @@ struct FINITO_basic_iterable{R<:Real,Tx,Tf,Tg}
     f::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
-    N::Int64                # number of data points in the finite sum problem 
+    N::Int                  # number of data points in the finite sum problem 
     L::Maybe{Union{Array{R},R}}  # Lipschitz moduli of nabla f_i	
     γ::Maybe{Union{Array{R},R}}  # stepsizes 
-    sweeping::Int           # to only use one stepsize γ
-    batch::Int64            # batch size
+    sweeping::Int8          # to only use one stepsize γ
+    batch::Int              # batch size
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_basic_state{R<:Real,Tx}
+mutable struct FINITO_basic_state{R<:Real,Tx} <: AbstractFinitoState
     p::Array{Tx}            # table of x_j- γ_j/N nabla f_j(x_j) 
     γ::Array{R}             # stepsize parameters 
     hat_γ::R                # average γ 
     av::Tx                  # the running average
     z::Tx
-    ind::Array{Array{Int64}} # running index set 
+    ind::Array{Array{Int}} # running index set 
     # some extra placeholders 
-    d::Int64                # number of batches 
+    d::Int                  # number of batches 
     ∇f_temp::Tx             # placeholder for gradients 
-    idxr::Int64             # running idx in the iterate 
-    idx::Int64              # location of idxr in 1:N 
-    inds::Array{Int64}      # needed for shuffled only  
+    idxr::Int               # running idx in the iterate 
+    idx::Int                # location of idxr in 1:N 
+    inds::Array{Int}        # needed for shuffled only  
 end
 
-function FINITO_basic_state(p::Array{Tx}, γ::Array{R}, hat_γ::R, av, z, ind, d) where {R,Tx}
+function FINITO_basic_state(p, γ, hat_γ::R, av::Tx, z::Tx, ind, d) where {R,Tx}
     return FINITO_basic_state{R,Tx}(
         p,
         γ,
@@ -49,14 +49,12 @@ function Base.iterate(iter::FINITO_basic_iterable{R,Tx}) where {R,Tx}
     if iter.sweeping == 1
         ind = [collect(1:r)] # placeholder
     else
-        ind = Vector{Vector{Int64}}(undef, 0)
-        d = Int64(floor(N / r))
+        ind = Vector{Vector{Int}}(undef, 0)
+        d = Int(floor(N / r))
         for i = 1:d
             push!(ind, collect(r*(i-1)+1:i*r))
         end
-        if r * d < N
-            push!(ind, collect(r*d+1:N))
-        end
+        r * d < N && push!(ind, collect(r*d+1:N))
     end
     d = cld(N, r) # number of batches  
     # updating the stepsize 
@@ -86,6 +84,7 @@ function Base.iterate(iter::FINITO_basic_iterable{R,Tx}) where {R,Tx}
     z, ~ = prox(iter.g, av, hat_γ)
 
     state = FINITO_basic_state(p, γ, hat_γ, av, z, ind, d)
+    
     return state, state
 end
 
@@ -120,7 +119,6 @@ function Base.iterate(
 
     return state, state
 end
-
 
 #TODO list
 ## in cyclic/shuffled minibatchs are static  

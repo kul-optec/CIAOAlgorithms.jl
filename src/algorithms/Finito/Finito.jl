@@ -14,14 +14,14 @@
 # In International Conference on Machine Learning (2014), pp. 1125-1133.
 #
 
-
-
 using LinearAlgebra
 using ProximalOperators
 using ProximalAlgorithms.IterationTools
 using Printf
 using Base.Iterators
 using Random
+
+abstract type AbstractFinitoState end
 
 
 include("Finito_basic.jl")
@@ -31,7 +31,7 @@ include("Finito_adaptive.jl")
 
 struct Finito{R<:Real}
     γ::Maybe{Union{Array{R},R}}
-    sweeping::Int
+    sweeping::Int8
     LFinito::Bool
     extended::Bool
     adaptive::Bool
@@ -44,7 +44,7 @@ struct Finito{R<:Real}
     tol_b::R
     function Finito{R}(;
         γ::Maybe{Union{Array{R},R}} = nothing,
-        sweeping::Int = 1,
+        sweeping = 1,
         LFinito::Bool = false,
         extended::Bool = false,
         adaptive::Bool = false,
@@ -81,22 +81,22 @@ end
 function (solver::Finito{R})(f, g, x0; L = nothing, N = N) where {R}
 
     stop(state) = false
-    stop(state::FINITO_adaptive_state) = isempty(state.ind)
+    # stop(state::FINITO_adaptive_state) = isempty(state.ind)
 
     disp(it, state) = @printf "%5d | %.3e  \n" it state.hat_γ
 
-    # dispatching the structure
+    # dispatching the iterator
     if solver.LFinito
-        iter = FINITO_LFinito_iterable(f, g, x0, N, L, solver.γ,
-                solver.sweeping, solver.minibatch[2], solver.α,
+        iter = FINITO_LFinito_iterable(f,g,x0,N,L,solver.γ,
+            solver.sweeping,solver.minibatch[2],solver.α,
         )
     elseif solver.adaptive
-        iter = FINITO_adaptive_iterable(f, g, x0, N, L, solver.tol,
-                solver.tol_b, solver.sweeping, solver.α,
+        iter = FINITO_adaptive_iterable(f,g,x0,N,L,solver.tol,
+            solver.tol_b,solver.sweeping,solver.α,
         )
     else
-        iter = FINITO_basic_iterable(f, g, x0, N, L, solver.γ,
-                solver.sweeping, solver.minibatch[2], solver.α,
+        iter = FINITO_basic_iterable(f,g,x0,N,L,solver.γ,
+            solver.sweeping,solver.minibatch[2],solver.α,
         )
     end
 
@@ -150,4 +150,78 @@ Optional keyword arguments are:
 Finito(::Type{R}; kwargs...) where {R} = Finito{R}(; kwargs...)
 Finito(; kwargs...) = Finito(Float64; kwargs...)
 
-#TODO list
+
+"""
+If `solver = Finito(args...)`, then 
+
+    problem = Finito_problem(solver, F, g, x0, N, L)
+
+    instantiate a Julia struct with the following fields: 
+        * `sol`:    the current output (initially equal to x0) 
+        * `iter`:   the appropriate finito iterator 
+        * `state = (Iteration number, parameters)`: the internal state of the solver  
+
+To perform one iteration of the algorithm specified with the solver run
+
+    update!(problem)
+
+The fields of `problem` are updated accordingly.
+
+Note that irrelevant fields of the solver (maxit, verbose, freq) are ignored in this mode.      
+"""
+
+
+mutable struct Finito_problem{Tx,X}
+    sol::Tx             # solution  
+    iter::X             # iterator
+    cnt::Int            # iteration counter
+    state::Maybe{AbstractFinitoState}   # state of the solver
+    function Finito_problem{Tx,X}(s::Tx, i::X, c) where {Tx,X}
+        p = new()
+        p.sol = s
+        p.iter = i
+        p.cnt = c
+        p
+    end
+end
+
+function Finito_problem(solver::Finito{R}, f, g, x0; L = nothing, N = N) where {R}
+    # dispatching the iterator
+    if solver.LFinito
+        iter = FINITO_LFinito_iterable(f,g,x0,N,L,solver.γ,
+            solver.sweeping,solver.minibatch[2],solver.α,
+        )
+    elseif solver.adaptive
+        iter = FINITO_adaptive_iterable(f,g,x0,N,L,solver.tol,
+            solver.tol_b,solver.sweeping,solver.α,
+        )
+    else
+        iter = FINITO_basic_iterable(f,g,x0,N,L,solver.γ,
+            solver.sweeping,solver.minibatch[2],solver.α,
+        )
+    end
+
+    return Finito_problem(x0, iter, Int(0))
+end
+
+
+Finito_problem(s::Tx, i::X, c) where {Tx,X} = Finito_problem{Tx,X}(s, i, c)
+
+
+function update!(p::Finito_problem{Tx,X}) where {Tx,X}
+    next = try
+        Base.iterate(p.iter, p.state)
+    catch y
+        if isa(y, UndefRefError)
+            Base.iterate(p.iter)
+        end
+    end
+    if next === nothing
+        error("next state has become Nothing at iteration $(p.cnt+1)")
+        return nothing
+    end
+    p.state = next[2]
+    p.sol = next[2].z
+    p.cnt += 1
+    nothing
+end

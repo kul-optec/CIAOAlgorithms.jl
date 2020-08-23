@@ -2,22 +2,22 @@ struct SVRG_basic_iterable{R<:Real,Tx,Tf,Tg}
     f::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
-    N::Int64                # # of data points in the finite sum problem 
+    N::Int                  # of data points in the finite sum problem 
     L::Maybe{Union{Array{R},R}}  # Lipschitz moduli of nabla f_i	
     μ::Maybe{Union{Array{R},R}}  # convexity moduli of the gradients
     γ::Maybe{R}             # stepsize 
-    m::Maybe{Int64}         # number of inner loop updates
+    m::Maybe{Int}           # number of inner loop updates
     plus::Bool              # for SVRG++ variant 
 end
 
-mutable struct SVRG_basic_state{R<:Real,Tx}
+mutable struct SVRG_basic_state{R<:Real,Tx} <: AbstractSVRGState
     γ::R                    # stepsize 
-    m::Int64                # number of inner loop updates
+    m::Int                  # number of inner loop updates
     av::Tx                  # the running average
     z::Tx
     z_full::Tx              # the outer loop argument
     w::Tx                   # the inner loop variable
-    ind::Array{Int64}       # running idx set 
+    ind::Array{Int}         # running idx set 
     # some extra placeholders 
     ∇f_temp::Tx             # placeholder for gradients 
     temp::Tx
@@ -25,7 +25,7 @@ end
 
 function SVRG_basic_state(
     γ::R,
-    m::Int64,
+    m,
     av::Tx,
     z::Tx,
     z_full::Tx,
@@ -93,18 +93,15 @@ function Base.iterate(
     end
     # full update 	
     state.z_full .= state.z ./ state.m
-    if !iter.plus
-        state.w .= state.z_full
-    end # only for basic SVRG
-    state.z .= zero(state.z)  # for next iterate 
+    iter.plus || (state.w .= state.z_full) # only for basic SVRG
+    state.z = zero(state.z)  # for next iterate 
     state.av .= state.z
     for i = 1:iter.N
         gradient!(state.∇f_temp, iter.f[i], state.z_full) 
         state.∇f_temp ./= iter.N
         state.av .+= state.∇f_temp
     end
-    if iter.plus
-        state.m *= 2
-    end # only for SVRG++
+    iter.plus && (state.m *= 2) # only for SVRG++
+
     return state, state
 end

@@ -12,7 +12,7 @@
 
     R = real(T)
 
-    N, n = 6, 4 # A in R^{N x n}   
+    N, n = 6, 5 # A in R^{N x n}   
     p = 2 # nonzeros in the solution
 
     y_star = rand(T, N)
@@ -63,92 +63,170 @@
     tol = 1e-3
 
     @testset "Finito" begin
-
         # sweeping 1, 2, 3 for randomined, cyclic and shuffled sampling strategies, respectively.
-
-        # basic finito
-        @testset "basic Finito" for sweeping in collect(1:3)
-            solver = CIAOAlgorithms.Finito{R}(maxit = maxit, sweeping = sweeping)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(cost_lasso(x_finito) - f_star) < tol
-        end
-
-        # limited memory finito 
-        @testset "LFinito" for sweeping in collect(2:3)
-            # @testset "cyclical" begin
-            solver =
-                CIAOAlgorithms.Finito{R}(maxit = maxit, sweeping = sweeping, LFinito = true)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(cost_lasso(x_finito) - f_star) < tol
-        end
-
-        # adaptive variant 
-        vec_ref = [(1, 874), (2, 434), (3, 1964)] #reference iteration numbers and sampling strategies
-        @testset "adaptive finito" for (sweeping, it) in vec_ref
-            # @testset "randomized" begin
-            solver = CIAOAlgorithms.Finito{R}(
-                maxit = maxit,
-                tol = R(1e-5),
-                sweeping = sweeping,
-                adaptive = true,
-            )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test it_finito < it
-            @test norm(cost_lasso(x_finito) - f_star) < tol
-        end
-
-        # basic finito with minibatch 
-        vec_ref = [(1, 2), (2, 2), (3, 3)] # different samplings and batch sizes 
-        @testset "Finito_minibatch" for (sweeping, batch) in vec_ref
-            solver = CIAOAlgorithms.Finito{R}(
-                maxit = maxit,
-                sweeping = sweeping,
-                minibatch = (true, batch),
-            )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(cost_lasso(x_finito) - f_star) < tol
-        end
-
-        # limited memory finito with minibatch 
-        vec_ref = [(2, 1), (2, 2), (3, 3)] # different samplings and batch sizes 
-        @testset "LFinito_minibatch" for (sweeping, batch) in vec_ref
-            solver = CIAOAlgorithms.Finito{R}(
-                maxit = maxit,
-                sweeping = sweeping,
-                LFinito = true,
-                minibatch = (true, batch),
-            )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(cost_lasso(x_finito) - f_star) < tol
-        end
-
-        # test with user defined stepsizes
-        @testset "γ and L as scalars" begin
-            @testset "randomized" begin
-                γ = N / maximum(L)
-                solver = CIAOAlgorithms.Finito{R}(maxit = maxit, γ = γ)
+        
+        ## test the solver
+        @testset "with solver" begin
+            # basic finito
+            @testset "basic Finito" for sweeping in collect(1:3)
+                solver = CIAOAlgorithms.Finito{R}(maxit = maxit, sweeping = sweeping)
                 x_finito, it_finito = solver(F, g, x0, L = L, N = N)
                 @test norm(cost_lasso(x_finito) - f_star) < tol
             end
-            @testset "cyclic" begin
-                solver = CIAOAlgorithms.Finito{R}(maxit = maxit)
-                x_finito, it_finito = solver(F, g, x0, L = maximum(L), N = N)
+
+            # limited memory finito 
+            @testset "LFinito" for sweeping in collect(2:3)
+                # @testset "cyclical" begin
+                solver =
+                    CIAOAlgorithms.Finito{R}(maxit = maxit, sweeping = sweeping, LFinito = true)
+                x_finito, it_finito = solver(F, g, x0, L = L, N = N)
                 @test norm(cost_lasso(x_finito) - f_star) < tol
             end
+
+            # adaptive variant 
+            @testset "adaptive finito" for sweeping in collect(1:3)
+                solver = CIAOAlgorithms.Finito{R}(
+                    maxit = maxit,
+                    tol = R(1e-5),
+                    sweeping = sweeping,
+                    adaptive = true,
+                )
+                x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+                # @test it_finito < it
+                @test norm(cost_lasso(x_finito) - f_star) < tol
+            end
+
+            # basic finito with minibatch 
+            vec_ref = [(1, 2), (2, 2), (3, 3)] # different samplings and batch sizes 
+            @testset "Finito_minibatch" for (sweeping, batch) in vec_ref
+                solver = CIAOAlgorithms.Finito{R}(
+                    maxit = maxit,
+                    sweeping = sweeping,
+                    minibatch = (true, batch),
+                )
+                x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+                @test norm(cost_lasso(x_finito) - f_star) < tol
+            end
+
+            # limited memory finito with minibatch 
+            vec_ref = [(2, 1), (2, 2), (3, 3)] # different samplings and batch sizes 
+            @testset "LFinito_minibatch" for (sweeping, batch) in vec_ref
+                solver = CIAOAlgorithms.Finito{R}(
+                    maxit = maxit,
+                    sweeping = sweeping,
+                    LFinito = true,
+                    minibatch = (true, batch),
+                )
+                x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+                @test norm(cost_lasso(x_finito) - f_star) < tol
+            end
+
+            # test with user defined stepsizes
+            @testset "γ and L as scalars" begin
+                @testset "randomized" begin
+                    γ = N / maximum(L)
+                    solver = CIAOAlgorithms.Finito{R}(maxit = maxit, γ = γ)
+                    x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+                    @test norm(cost_lasso(x_finito) - f_star) < tol
+                end
+                @testset "cyclic" begin
+                    solver = CIAOAlgorithms.Finito{R}(maxit = maxit)
+                    x_finito, it_finito = solver(F, g, x0, L = maximum(L), N = N)
+                    @test norm(cost_lasso(x_finito) - f_star) < tol
+                end
+            end
         end
+
+         ## test the one iteration update function
+        @testset "one iterate" begin
+            
+            solver = CIAOAlgorithms.Finito{R}(sweeping = 1)
+            problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
+            @test problem.sol === x0
+            @test problem.cnt === 0
+
+            for k in 1:2
+                CIAOAlgorithms.update!(problem)
+                @test problem.sol === problem.state.z
+                @test k === problem.cnt
+            end 
+            @testset "basic Finito" for sweeping in collect(1:3)
+                solver = CIAOAlgorithms.Finito{R}(sweeping = sweeping)
+                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
+                for k in 1: maxit 
+                    CIAOAlgorithms.update!(problem)
+                end 
+                @test norm(cost_lasso(problem.sol) - f_star) < tol
+            end
+
+            # limited memory finito 
+            @testset "LFinito" for sweeping in collect(2:3)
+                # @testset "cyclical" begin
+                solver = CIAOAlgorithms.Finito{R}(sweeping = sweeping, LFinito = true)
+                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
+                for k in 1: maxit 
+                    CIAOAlgorithms.update!(problem)
+                end
+                @test norm(cost_lasso(problem.sol) - f_star) < tol
+            end
+
+            # adaptive variant 
+            @testset "adaptive finito" for sweeping in collect(1:3)
+                solver = CIAOAlgorithms.Finito{R}(
+                    tol = R(1e-5),
+                    sweeping = sweeping,
+                    adaptive = true,
+                )
+               problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
+                for k in 1: maxit 
+                    CIAOAlgorithms.update!(problem)
+                end
+                @test norm(cost_lasso(problem.sol) - f_star) < tol
+            end
+        end
+
+
     end
 
+
     @testset "SVRG" begin
-        γ = 1 / (7 * maximum(L))
-        @testset "SVRG-Base" begin
-            solver = CIAOAlgorithms.SVRG{T}(maxit = maxit, γ = γ)
-            x_SVRG, it_SVRG = solver(F, g, x0, N = N)
-            @test norm(cost_lasso(x_SVRG) - f_star) < tol
+
+         ## test the solver
+        @testset "with solver" begin    
+            γ = 1 / (7 * maximum(L))
+            @testset "SVRG-Base" begin
+                solver = CIAOAlgorithms.SVRG{T}(maxit = maxit, γ = γ)
+                x_SVRG, it_SVRG = solver(F, g, x0, N = N)
+                @test norm(cost_lasso(x_SVRG) - f_star) < tol
+            end
+            @testset "SVRG++" begin
+                solver = CIAOAlgorithms.SVRG{T}(maxit = 16, γ = γ, m = 1, plus = true)
+                x_SVRG, it_SVRG = solver(F, g, x0, N = N)
+                @test norm(cost_lasso(x_SVRG) - f_star) < tol
+            end
         end
-        @testset "SVRG++" begin
-            solver = CIAOAlgorithms.SVRG{T}(maxit = 16, γ = γ, m = 1, plus = true)
-            x_SVRG, it_SVRG = solver(F, g, x0, N = N)
-            @test norm(cost_lasso(x_SVRG) - f_star) < tol
+
+         ## test the one iteration update function
+        @testset "one iterate" begin
+            γ = 1 / (7 * maximum(L))
+            @testset "SVRG-Base" begin
+                solver = CIAOAlgorithms.SVRG{T}(γ = γ)
+                problem = CIAOAlgorithms.SVRG_problem(solver, F, g, x0, N = N)  
+                for k in 1: maxit 
+                    CIAOAlgorithms.update!(problem)
+                end 
+                @test norm(cost_lasso(problem.sol) - f_star) < tol
+            end
+    
+            @testset "SVRG++" begin
+                solver = CIAOAlgorithms.SVRG{T}(γ = γ, m = 1, plus = true)
+                problem = CIAOAlgorithms.SVRG_problem(solver, F, g, x0, N = N)  
+                for k in 1:16 
+                    CIAOAlgorithms.update!(problem)
+                end
+                @test norm(cost_lasso(problem.sol) - f_star) < tol
+            end
+
         end
     end
 end

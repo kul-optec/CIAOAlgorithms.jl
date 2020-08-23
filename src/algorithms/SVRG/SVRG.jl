@@ -17,6 +17,9 @@ using Printf
 using Base.Iterators
 using Random
 
+abstract type AbstractSVRGState end
+
+
 include("SVRG_basic.jl")
 
 struct SVRG{R<:Real}
@@ -101,3 +104,66 @@ Optional keyword arguments are:
 
 SVRG(::Type{R}; kwargs...) where {R} = SVRG{R}(; kwargs...)
 SVRG(; kwargs...) = SVRG(Float64; kwargs...)
+
+
+
+"""
+If `solver = SVRG(args...)`, then 
+
+    problem = SVRG_problem(solver, F, g, x0, N, L)
+
+    instantiate a Julia struct with the following fields: 
+        * `sol`:    the current output (initially equal to x0) 
+        * `iter`:   the SVRG iterator 
+        * `state = (Iteration number, parameters)`: the internal state of the solver  
+
+To perform one iteration of the algorithm specified with the solver run
+
+    update!(problem)
+
+The fields of `problem` are updated accordingly.
+
+Note that irrelevant fields of the solver (maxit, verbose, freq) are ignored in this mode.      
+"""
+
+
+mutable struct SVRG_problem{Tx,X}
+    sol::Tx             # solution  
+    iter::X             # iterator
+    cnt::Int            # iteration counter
+    state::Maybe{AbstractSVRGState}   # state of the solver
+    function SVRG_problem{Tx,X}(s::Tx, i::X, c) where {Tx,X}
+        p = new()
+        p.sol = s
+        p.iter = i
+        p.cnt = c
+        p
+    end
+end
+
+
+function SVRG_problem(solver::SVRG{R}, f, g, x0; L = nothing, μ = nothing, N = N) where {R}
+    m = solver.m === nothing ? m = N : m = solver.m
+
+    # dispatching the iterator
+    iter = SVRG_basic_iterable(f, g, x0, N, L, μ, solver.γ, m, solver.plus)
+
+    return SVRG_problem(x0, iter, Int(0))
+end
+
+SVRG_problem(s::Tx, i::X, c) where {Tx,X} = SVRG_problem{Tx,X}(s, i, c)
+
+function update!(p::SVRG_problem{Tx,X}) where {Tx,X}
+    next = try
+        Base.iterate(p.iter, p.state)
+    catch y
+        if isa(y, UndefRefError)
+            Base.iterate(p.iter)
+        end
+    end
+    next === nothing && return nothing
+    p.state = next[2]
+    p.sol = next[2].z_full
+    p.cnt += 1
+    nothing
+end

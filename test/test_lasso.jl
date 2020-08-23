@@ -1,7 +1,6 @@
 # # tests for lasso: 1/2\|Ax-b\|^2 + λ \|x\|_1
 
 @testset "Lasso ($T)" for T in [Float32, Float64]
-
     using Test
     using LinearAlgebra
     using CIAOAlgorithms
@@ -64,7 +63,7 @@
 
     @testset "Finito" begin
         # sweeping 1, 2, 3 for randomined, cyclic and shuffled sampling strategies, respectively.
-        
+
         ## test the solver
         @testset "with solver" begin
             # basic finito
@@ -77,8 +76,11 @@
             # limited memory finito 
             @testset "LFinito" for sweeping in collect(2:3)
                 # @testset "cyclical" begin
-                solver =
-                    CIAOAlgorithms.Finito{R}(maxit = maxit, sweeping = sweeping, LFinito = true)
+                solver = CIAOAlgorithms.Finito{R}(
+                    maxit = maxit,
+                    sweeping = sweeping,
+                    LFinito = true,
+                )
                 x_finito, it_finito = solver(F, g, x0, L = L, N = N)
                 @test norm(cost_lasso(x_finito) - f_star) < tol
             end
@@ -137,25 +139,25 @@
             end
         end
 
-         ## test the one iteration update function
+        ## test the one iteration update function
         @testset "one iterate" begin
-            
+
             solver = CIAOAlgorithms.Finito{R}(sweeping = 1)
-            problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
+            problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)
             @test problem.sol === x0
             @test problem.cnt === 0
 
-            for k in 1:2
+            for k = 1:2
                 CIAOAlgorithms.update!(problem)
                 @test problem.sol === problem.state.z
                 @test k === problem.cnt
-            end 
+            end
             @testset "basic Finito" for sweeping in collect(1:3)
                 solver = CIAOAlgorithms.Finito{R}(sweeping = sweeping)
-                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
-                for k in 1: maxit 
+                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)
+                for k = 1:maxit
                     CIAOAlgorithms.update!(problem)
-                end 
+                end
                 @test norm(cost_lasso(problem.sol) - f_star) < tol
             end
 
@@ -163,8 +165,8 @@
             @testset "LFinito" for sweeping in collect(2:3)
                 # @testset "cyclical" begin
                 solver = CIAOAlgorithms.Finito{R}(sweeping = sweeping, LFinito = true)
-                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
-                for k in 1: maxit 
+                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)
+                for k = 1:maxit
                     CIAOAlgorithms.update!(problem)
                 end
                 @test norm(cost_lasso(problem.sol) - f_star) < tol
@@ -177,8 +179,8 @@
                     sweeping = sweeping,
                     adaptive = true,
                 )
-               problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)  
-                for k in 1: maxit 
+                problem = CIAOAlgorithms.Finito_problem(solver, F, g, x0, L = L, N = N)
+                for k = 1:maxit
                     CIAOAlgorithms.update!(problem)
                 end
                 @test norm(cost_lasso(problem.sol) - f_star) < tol
@@ -191,8 +193,8 @@
 
     @testset "SVRG" begin
 
-         ## test the solver
-        @testset "with solver" begin    
+        ## test the solver
+        @testset "with solver" begin
             γ = 1 / (7 * maximum(L))
             @testset "SVRG-Base" begin
                 solver = CIAOAlgorithms.SVRG{T}(maxit = maxit, γ = γ)
@@ -206,22 +208,22 @@
             end
         end
 
-         ## test the one iteration update function
+        ## test the one iteration update function
         @testset "one iterate" begin
             γ = 1 / (7 * maximum(L))
             @testset "SVRG-Base" begin
                 solver = CIAOAlgorithms.SVRG{T}(γ = γ)
-                problem = CIAOAlgorithms.SVRG_problem(solver, F, g, x0, N = N)  
-                for k in 1: maxit 
+                problem = CIAOAlgorithms.SVRG_problem(solver, F, g, x0, N = N)
+                for k = 1:maxit
                     CIAOAlgorithms.update!(problem)
-                end 
+                end
                 @test norm(cost_lasso(problem.sol) - f_star) < tol
             end
-    
+
             @testset "SVRG++" begin
                 solver = CIAOAlgorithms.SVRG{T}(γ = γ, m = 1, plus = true)
-                problem = CIAOAlgorithms.SVRG_problem(solver, F, g, x0, N = N)  
-                for k in 1:16 
+                problem = CIAOAlgorithms.SVRG_problem(solver, F, g, x0, N = N)
+                for k = 1:16
                     CIAOAlgorithms.update!(problem)
                 end
                 @test norm(cost_lasso(problem.sol) - f_star) < tol

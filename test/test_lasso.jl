@@ -12,7 +12,7 @@
 
     R = real(T)
 
-    N, n = 6, 5 # A in R^{N x n}   
+    N, n = 6, 3 # A in R^{N x n}   
     p = 2 # nonzeros in the solution
 
     y_star = rand(T, N)
@@ -59,8 +59,8 @@
     g = NormL1(λ)
     x0 = zeros(T, n)
 
-    maxit = 5000
-    tol = 1e-3
+    maxit = 1000
+    tol = 1e-4
 
     @testset "Finito" begin
         # sweeping 1, 2, 3 for randomined, cyclic and shuffled sampling strategies, respectively.
@@ -166,17 +166,16 @@
         @testset "SVRG-Base" begin
             solver = CIAOAlgorithms.SVRG{T}(maxit = maxit, γ = γ)
             x_SVRG, it_SVRG = solver(F, g, x0, N = N)
-            @test norm(cost_lasso(x_SVRG) - f_star) < tol
+            @test cost_lasso(x_SVRG) - f_star < tol
         end
         @testset "SVRG++" begin
             solver = CIAOAlgorithms.SVRG{T}(maxit = 16, γ = γ, m = 1, plus = true)
             x_SVRG, it_SVRG = solver(F, g, x0, N = N)
-            @test norm(cost_lasso(x_SVRG) - f_star) < tol
+            @test cost_lasso(x_SVRG) - f_star < tol
         end
 
-         ## test the iterator 
+        # test the iterator 
         @testset "the iterator" begin
-            γ = 1 / (7 * maximum(L))
             solver = CIAOAlgorithms.SVRG{T}(γ = γ)
             iter = CIAOAlgorithms.iterator(solver, F, g, x0, N = N)
             @test iter.x0 === x0

@@ -110,7 +110,7 @@
 
         # test the iterator 
         @testset "the iterator" for LFinito in [true, false]
-            solver = CIAOAlgorithms.Finito{R}(
+            solver = CIAOAlgorithms.Finito{T}(
                     sweeping = 2,
                     LFinito = LFinito,
                     maxit = 10
@@ -139,6 +139,23 @@
             solver = CIAOAlgorithms.SVRG{T}(maxit = 16, γ = γ, m = N, plus = true)
             x_SVRG, it_SVRG = solver(F, g, x0, N = N)
             @test norm(x_SVRG - x_star) < tol
+        end
+
+        # test the iterator 
+        @testset "the iterator" begin
+            solver = CIAOAlgorithms.SVRG{T}(γ = γ)
+            iter = CIAOAlgorithms.iterator(solver, F, g, x0, N = N)
+            @test iter.x0 === x0
+
+            for state in take(iter, 2)
+                @test solution(state) === state.z_full
+                @test eltype(solution(state)) == T 
+            end
+            next = iterate(iter) # next = (state, state)
+            # one iteration with the solver 
+            solver = CIAOAlgorithms.SVRG{T}(γ = γ, maxit= 1)
+            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            @test solution(next[2]) == x_finito
         end
     end
 

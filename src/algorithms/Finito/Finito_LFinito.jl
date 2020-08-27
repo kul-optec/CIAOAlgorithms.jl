@@ -10,7 +10,7 @@ struct FINITO_LFinito_iterable{R<:Real,Tx,Tf,Tg}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_LFinito_state{R<:Real,Tx} <: AbstractFinitoState
+mutable struct FINITO_LFinito_state{R<:Real,Tx} 
     γ::Array{R}             # stepsize parameter
     hat_γ::R                # average γ 
     av::Tx                  # the running average
@@ -101,3 +101,5 @@ function Base.iterate(
 
     return state, state
 end
+
+solution(state::FINITO_LFinito_state) = state.z 

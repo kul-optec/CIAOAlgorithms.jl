@@ -5,7 +5,7 @@
     using LinearAlgebra
     using CIAOAlgorithms
     using ProximalOperators
-
+    using ProximalAlgorithms: IterationTools
 
     T = Float64
     # create the two classes 
@@ -107,6 +107,24 @@
                 @test norm(x_finito - x_star) < tol
             end
         end
+
+        # test the iterator 
+        @testset "the iterator" for LFinito in [true, false]
+            solver = CIAOAlgorithms.Finito{R}(
+                    sweeping = 2,
+                    LFinito = LFinito,
+                    maxit = 10
+                )
+            iter = CIAOAlgorithms.iterator(solver, F, g, x0, L = L, N = N)
+            @test iter.x0 === x0
+
+            for state in take(iter, 2)
+                @test solution(state) === state.z
+                @test eltype(solution(state)) == T
+            end
+            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            @test solution(IterationTools.loop(take(iter,10))) == x_finito
+        end        
     end
 
 

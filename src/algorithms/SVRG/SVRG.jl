@@ -109,61 +109,25 @@ SVRG(; kwargs...) = SVRG(Float64; kwargs...)
 """
 If `solver = SVRG(args...)`, then 
 
-    problem = SVRG_problem(solver, F, g, x0, N, L)
+    itr = iterator(solver, F, g, x0, N, L)
 
-    instantiate a struct `problem` with the following fields: 
-        * `sol`:    the current output (initially equal to x0) 
-        * `iter`:   the appropriate finito iterator
-        * `cnt`:    iteration number
-        * `state`: the internal state of the solver   
+    is an iterable object.
+    Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 
-To perform one iteration of the algorithm specified with the solver run
+    The solution at a given state can be obtained using solution(state)
+    e.g. 
+    for state in Iterators.take(itr, maxit)
+        # do something using solution(state)
+    end
 
-    update!(problem)
-
-The fields of `problem` are updated accordingly.
-
-Note that irrelevant fields of the solver (maxit, verbose, freq) are ignored in this mode.      
+    See https://docs.julialang.org/en/v1/manual/interfaces/index.html 
+    and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration utilities
 """
 
-
-mutable struct SVRG_problem{Tx,X}
-    sol::Tx             # solution  
-    iter::X             # iterator
-    cnt::Int            # iteration counter
-    state::Maybe{AbstractSVRGState}   # state of the solver
-    function SVRG_problem{Tx,X}(s::Tx, i::X, c) where {Tx,X}
-        p = new()
-        p.sol = s
-        p.iter = i
-        p.cnt = c
-        p
-    end
-end
-
-
-function SVRG_problem(solver::SVRG{R}, f, g, x0; L = nothing, μ = nothing, N = N) where {R}
+function iterator(solver::SVRG{R}, f, g, x0; L = nothing, μ = nothing, N = N) where {R}
     m = solver.m === nothing ? m = N : m = solver.m
-
     # dispatching the iterator
     iter = SVRG_basic_iterable(f, g, x0, N, L, μ, solver.γ, m, solver.plus)
 
-    return SVRG_problem(x0, iter, Int(0))
-end
-
-SVRG_problem(s::Tx, i::X, c) where {Tx,X} = SVRG_problem{Tx,X}(s, i, c)
-
-function update!(p::SVRG_problem{Tx,X}) where {Tx,X}
-    next = try
-        Base.iterate(p.iter, p.state)
-    catch y
-        if isa(y, UndefRefError)
-            Base.iterate(p.iter)
-        end
-    end
-    next === nothing && return nothing
-    p.state = next[2]
-    p.sol = next[2].z_full
-    p.cnt += 1
-    nothing
+    return iter
 end

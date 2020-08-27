@@ -10,7 +10,7 @@ struct FINITO_adaptive_iterable{R<:Real,Tx,Tf,Tg}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_adaptive_state{R<:Real,Tx} <: AbstractFinitoState
+mutable struct FINITO_adaptive_state{R<:Real,Tx} 
     p::Array{Tx}            # table of x_j stacked as array of arrays	
     ∇f::Array{Tx}           # table of gradients 
     γ::Array{R}             # stepsize parameter 
@@ -154,6 +154,7 @@ function Base.iterate(
     return state, state
 end
 
+solution(state::FINITO_adaptive_state) = state.z 
 
 #TODO list
 ## the initial guess for L may be modified

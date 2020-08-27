@@ -21,8 +21,8 @@ using Printf
 using Base.Iterators
 using Random
 
-abstract type AbstractFinitoState end
-
+# abstract type AbstractFinitoState end
+export solution
 
 include("Finito_basic.jl")
 include("Finito_LFinito.jl")
@@ -81,7 +81,6 @@ end
 function (solver::Finito{R})(f, g, x0; L = nothing, N = N) where {R}
 
     stop(state) = false
-    # stop(state::FINITO_adaptive_state) = isempty(state.ind)
 
     disp(it, state) = @printf "%5d | %.3e  \n" it state.hat_γ
 
@@ -154,38 +153,23 @@ Finito(; kwargs...) = Finito(Float64; kwargs...)
 """
 If `solver = Finito(args...)`, then 
 
-    problem = Finito_problem(solver, F, g, x0, N, L)
+    itr = iterator(solver, F, g, x0, N, L)
 
-    instantiate a struct `problem` with the following fields: 
-        * `sol`:    the current output (initially equal to x0) 
-        * `iter`:   the appropriate finito iterator
-        * `cnt`:    iteration number
-        * `state`: the internal state of the solver   
+    is an iterable object.
+    Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 
-To perform one iteration of the algorithm specified with the solver run
+    the solution at any given state can be obtained using solution(state)
+    e.g. 
+    for state in Iterators.take(itr, maxit)
+        # do something using solution(state)
+    end
 
-    update!(problem)
-
-    The fields of `problem` are updated accordingly.
-    Note that irrelevant fields of the solver (maxit, verbose, freq) are ignored in this mode.      
+    See https://docs.julialang.org/en/v1/manual/interfaces/index.html 
+    and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration utilities
 """
 
 
-mutable struct Finito_problem{Tx,X}
-    sol::Tx             # solution  
-    iter::X             # iterator
-    cnt::Int            # iteration counter
-    state::Maybe{AbstractFinitoState}   # state of the solver
-    function Finito_problem{Tx,X}(s::Tx, i::X, c) where {Tx,X}
-        p = new()
-        p.sol = s
-        p.iter = i
-        p.cnt = c
-        p
-    end
-end
-
-function Finito_problem(solver::Finito{R}, f, g, x0; L = nothing, N = N) where {R}
+function iterator(solver::Finito{R}, f, g, x0; L = nothing, N = N) where {R}
     # dispatching the iterator
     if solver.LFinito
         iter = FINITO_LFinito_iterable(f,g,x0,N,L,solver.γ,
@@ -200,28 +184,7 @@ function Finito_problem(solver::Finito{R}, f, g, x0; L = nothing, N = N) where {
             solver.sweeping,solver.minibatch[2],solver.α,
         )
     end
-
-    return Finito_problem(x0, iter, Int(0))
+    return iter
 end
 
 
-Finito_problem(s::Tx, i::X, c) where {Tx,X} = Finito_problem{Tx,X}(s, i, c)
-
-
-function update!(p::Finito_problem{Tx,X}) where {Tx,X}
-    next = try
-        Base.iterate(p.iter, p.state)
-    catch y
-        if isa(y, UndefRefError)
-            Base.iterate(p.iter)
-        end
-    end
-    if next === nothing
-        error("next state has become Nothing at iteration $(p.cnt+1)")
-        return nothing
-    end
-    p.state = next[2]
-    p.sol = next[2].z
-    p.cnt += 1
-    nothing
-end

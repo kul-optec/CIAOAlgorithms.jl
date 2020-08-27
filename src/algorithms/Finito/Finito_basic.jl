@@ -10,7 +10,7 @@ struct FINITO_basic_iterable{R<:Real,Tx,Tf,Tg}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_basic_state{R<:Real,Tx} <: AbstractFinitoState
+mutable struct FINITO_basic_state{R<:Real,Tx} 
     p::Array{Tx}            # table of x_j- γ_j/N nabla f_j(x_j) 
     γ::Array{R}             # stepsize parameters 
     hat_γ::R                # average γ 
@@ -119,6 +119,8 @@ function Base.iterate(
 
     return state, state
 end
+
+solution(state::FINITO_basic_state) = state.z 
 
 #TODO list
 ## in cyclic/shuffled minibatchs are static  

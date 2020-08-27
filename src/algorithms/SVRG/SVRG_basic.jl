@@ -106,5 +106,4 @@ function Base.iterate(
     return state, state
 end
 
-
 solution(state::SVRG_basic_state) = state.z_full

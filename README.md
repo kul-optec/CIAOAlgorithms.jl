@@ -3,7 +3,11 @@ CIAOAlgorithms implements Block-Coordinate and Incremental Aggregated Optimizati
 ```math
 minimize    1/N sum_{i=1}^N f_i(x) + g(x)
 ``` 
-where f_i are smooth, and g is (possibly) nonsmooth with easy to compute proximal mapping. These functions can be defined using the [ProximalAlgorithms.jl](https://github.com/kul-forbes/ProximalAlgorithms.jl) package. 
+or 
+```math
+minimize    1/N sum_{i=1}^N f_i(x_i) + g(sum_{i=1}^N x_i)
+``` 
+where f_i are smooth, and g is (possibly) nonsmooth with easy to compute proximal mapping. These functions can be defined using the [ProximalOperators.jl](https://github.com/kul-forbes/ProximalOperators.jl) package. 
 
 ### Quick guide
 You can add CIAOAlgorithms by pressing `]` to enter the package manager, then
@@ -18,6 +22,7 @@ Simple Lasso and logisitc regression test examples can be found [here](test).
 Algorithm                             | Function      | Reference
 --------------------------------------|---------------|-----------
 Finito/MISO/DIAG  | [`Finito`](src/algorithms/Finito.jl) | [[1]][Defazio2014Finito], [[3]][Mairal2015Incremental], [[6]][Mokhtari2018Surpassing], [[7]][Latafat2019Block]
+ProShI  | [`Proshi`](src/algorithms/ProSchI.jl) | [[7]][Latafat2019Block]
 SVRG/SVRG++  | [`SVRG`](src/algorithms/SVRG.jl) | [[2]][Xiao2014Proximal], [[4]][AllenZhu2016Improved], [[5]][Reddi2016Proximal]
 
 ### References

@@ -23,15 +23,7 @@ mutable struct SVRG_basic_state{R<:Real,Tx}
     temp::Tx
 end
 
-function SVRG_basic_state(
-    γ::R,
-    m,
-    av::Tx,
-    z::Tx,
-    z_full::Tx,
-    w::Tx,
-    ind,
-) where {R,Tx}
+function SVRG_basic_state(γ::R, m, av::Tx, z::Tx, z_full::Tx, w::Tx, ind) where {R,Tx}
     return SVRG_basic_state{R,Tx}(γ, m, av, z, z_full, w, ind, copy(av), copy(av))
 end
 
@@ -76,10 +68,7 @@ function Base.iterate(iter::SVRG_basic_iterable{R}) where {R}
     return state, state
 end
 
-function Base.iterate(
-    iter::SVRG_basic_iterable{R},
-    state::SVRG_basic_state{R},
-) where {R}
+function Base.iterate(iter::SVRG_basic_iterable{R}, state::SVRG_basic_state{R}) where {R}
     # The inner cycle
     for i in rand(state.ind, state.m)
         gradient!(state.temp, iter.f[i], state.z_full)
@@ -97,7 +86,7 @@ function Base.iterate(
     state.z = zero(state.z)  # for next iterate 
     state.av .= state.z
     for i = 1:iter.N
-        gradient!(state.∇f_temp, iter.f[i], state.z_full) 
+        gradient!(state.∇f_temp, iter.f[i], state.z_full)
         state.∇f_temp ./= iter.N
         state.av .+= state.∇f_temp
     end

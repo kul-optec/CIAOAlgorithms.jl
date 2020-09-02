@@ -1,12 +1,11 @@
 # # tests for logistic regression: sum_i log(1+exp(-b_i<a_i,x>)) + λ \|x\|_1
 
+@testset "logistic-l1" begin
 using LinearAlgebra
 using CIAOAlgorithms
 using ProximalOperators
 using ProximalAlgorithms: IterationTools
 using Base.Iterators: take
-
-@testset "logistic-l1" begin
 
     T = Float64
     # create the two classes 
@@ -27,7 +26,7 @@ using Base.Iterators: take
     ys = [fill(1.0, size(x_class1, 1)); fill(-1.0, size(x_class2, 1))]
 
     # preparations for the solver 
-    x_star =   [0.0, 0.924160995722576, -1.1343956493097298, 0.0, 0.0] 
+    x_star = [0.0, 0.924160995722576, -1.1343956493097298, 0.0, 0.0]
 
     N, n = size(ys, 1), size(xs, 2)
 
@@ -50,7 +49,6 @@ using Base.Iterators: take
     tol = 1e-4
 
     @testset "Finito" begin
-
         # sweeping 1, 2, 3 for randomined, cyclic and shuffled sampling strategies, respectively.
 
         # basic finito  
@@ -111,11 +109,7 @@ using Base.Iterators: take
 
         # test the iterator 
         @testset "the iterator" for LFinito in [true, false]
-            solver = CIAOAlgorithms.Finito{T}(
-                    sweeping = 2,
-                    LFinito = LFinito,
-                    maxit = 10
-                )
+            solver = CIAOAlgorithms.Finito{T}(sweeping = 2, LFinito = LFinito, maxit = 10)
             iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, L = L, N = N)
             @test iter.x0 === x0
 
@@ -124,8 +118,8 @@ using Base.Iterators: take
                 @test eltype(solution(state)) == T
             end
             x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
-            @test solution(IterationTools.loop(take(iter,10))) == x_finito
-        end        
+            @test solution(IterationTools.loop(take(iter, 10))) == x_finito
+        end
     end
 
 
@@ -150,11 +144,11 @@ using Base.Iterators: take
 
             for state in take(iter, 2)
                 @test solution(state) === state.z_full
-                @test eltype(solution(state)) == T 
+                @test eltype(solution(state)) == T
             end
             next = iterate(iter) # next = (state, state)
             # one iteration with the solver 
-            solver = CIAOAlgorithms.SVRG{T}(γ = γ, maxit= 1)
+            solver = CIAOAlgorithms.SVRG{T}(γ = γ, maxit = 1)
             x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test solution(next[2]) == x_finito
         end

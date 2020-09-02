@@ -43,12 +43,19 @@ struct SVRG{R<:Real}
     end
 end
 
-function (solver::SVRG{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(),  L = nothing, μ = nothing, N = N) where {R,C<:RealOrComplex{R}}
+function (solver::SVRG{R})(
+    x0::AbstractArray{C};
+    F = nothing,
+    g = ProximalOperators.Zero(),
+    L = nothing,
+    μ = nothing,
+    N = N,
+) where {R,C<:RealOrComplex{R}}
 
     stop(state::SVRG_basic_state) = false
     disp(it, state) = @printf "%5d | %.3e  \n" it state.γ
 
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
+    F === nothing && (F = fill(ProximalOperators.Zero(), (N,)))
     m = solver.m === nothing ? m = N : m = solver.m
 
     maxit = solver.maxit
@@ -122,8 +129,16 @@ See https://docs.julialang.org/en/v1/manual/interfaces/index.html
 and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration utilities
 """
 
-function iterator(solver::SVRG{R}, x0::AbstractArray{C};F = nothing , g = ProximalOperators.Zero(),  L = nothing, μ = nothing, N = N) where {R,C<:RealOrComplex{R}}
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
+function iterator(
+    solver::SVRG{R},
+    x0::AbstractArray{C};
+    F = nothing,
+    g = ProximalOperators.Zero(),
+    L = nothing,
+    μ = nothing,
+    N = N,
+) where {R,C<:RealOrComplex{R}}
+    F === nothing && (F = fill(ProximalOperators.Zero(), (N,)))
     m = solver.m === nothing ? m = N : m = solver.m
     # dispatching the iterator
     iter = SVRG_basic_iterable(F, g, x0, N, L, μ, solver.γ, m, solver.plus)

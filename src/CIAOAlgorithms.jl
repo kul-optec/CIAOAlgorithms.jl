@@ -8,6 +8,7 @@ include("utilities/indexingUtilities.jl")
 
 # algorithms 
 include("algorithms/Finito/Finito.jl")
+include("algorithms/ProShI/ProShI.jl")
 include("algorithms/SVRG/SVRG.jl")
 
 end # module

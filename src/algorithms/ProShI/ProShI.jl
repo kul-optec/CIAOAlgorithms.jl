@@ -2,7 +2,6 @@
 # proximal gradient methods for nonsmooth nonconvex problems."
 # arXiv:1906.10053 (2019).
 #
- 
 
 using LinearAlgebra
 using ProximalOperators
@@ -35,29 +34,35 @@ struct Proshi{R<:Real}
         @assert γ === nothing || minimum(γ) > 0
         @assert maxit > 0
         @assert freq > 0
-        new(
-            γ,
-            sweeping,
-            minibatch,
-            maxit,
-            verbose,
-            freq,
-            α,
-        )
+        new(γ, sweeping, minibatch, maxit, verbose, freq, α)
     end
 end
 
-function (solver::Proshi{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
+function (solver::Proshi{R})(
+    x0::AbstractArray{C};
+    F = nothing,
+    g = ProximalOperators.Zero(),
+    L = nothing,
+    N = N,
+) where {R,C<:RealOrComplex{R}}
 
     stop(state) = false
 
     disp(it, state) = @printf "%5d | %.3e  \n" it state.hat_γ
 
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
+    F === nothing && (F = fill(ProximalOperators.Zero(), (N,)))
     # dispatching the iterator
-    iter = Proshi_basic_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
-        )
+    iter = Proshi_basic_iterable(
+        F,
+        g,
+        x0,
+        N,
+        L,
+        solver.γ,
+        solver.sweeping,
+        solver.minibatch[2],
+        solver.α,
+    )
 
     iter = take(halt(iter, stop), solver.maxit)
     iter = enumerate(iter)
@@ -127,13 +132,26 @@ and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration uti
 """
 
 
-function iterator(solver::Proshi{R}, x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
+function iterator(
+    solver::Proshi{R},
+    x0::AbstractArray{C};
+    F = nothing,
+    g = ProximalOperators.Zero(),
+    L = nothing,
+    N = N,
+) where {R,C<:RealOrComplex{R}}
+    F === nothing && (F = fill(ProximalOperators.Zero(), (N,)))
     # dispatching the iterator
-    iter = Proshi_basic_iterable(F,g,x0,N,L,solver.γ,
-        solver.sweeping,solver.minibatch[2],solver.α,
+    iter = Proshi_basic_iterable(
+        F,
+        g,
+        x0,
+        N,
+        L,
+        solver.γ,
+        solver.sweeping,
+        solver.minibatch[2],
+        solver.α,
     )
     return iter
 end
-
-

@@ -10,7 +10,7 @@ struct Proshi_basic_iterable{R<:Real,C<:Union{R,Complex{R}},Tx<:AbstractArray{C}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct Proshi_basic_state{R<:Real,Tx} 
+mutable struct Proshi_basic_state{R<:Real,Tx}
     s::Array{Tx}            # table of x_j- γ_j/N nabla f_j(x_j) 
     γ::Array{R}             # stepsize parameters 
     hat_γ::R                # average γ 
@@ -83,9 +83,9 @@ function Base.iterate(iter::Proshi_basic_iterable{R,C,Tx}) where {R,C,Tx}
     av = sum(s) # the running average  
     z, ~ = prox(iter.g, av, hat_γ) # w in [1]
     z .-= av
-    z ./= hat_γ 
+    z ./= hat_γ
     state = Proshi_basic_state(s, γ, hat_γ, av, z, ind, d)
-    
+
     return state, state
 end
 
@@ -111,8 +111,8 @@ function Base.iterate(
     for i in state.ind[state.idxr]
         # perform the main steps 
         state.av .-= state.s[i]
-        @. state.s[i] += state.γ[i]*state.z
-        gradient!(state.∇f_temp, iter.f[i], state.s[i]) 
+        @. state.s[i] += state.γ[i] * state.z
+        gradient!(state.∇f_temp, iter.f[i], state.s[i])
         state.∇f_temp .*= -(state.γ[i] / iter.N)
         state.∇f_temp .+= state.s[i]
         state.av .+= state.∇f_temp
@@ -120,16 +120,16 @@ function Base.iterate(
     end
     prox!(state.z, iter.g, state.av, state.hat_γ)
     state.z .-= state.av
-    state.z ./= state.hat_γ      
+    state.z ./= state.hat_γ
     return state, state
 end
 
-function solution(state::Proshi_basic_state) 
-    for i in 1:length(state.s)
-        state.s[i] .+= state.γ[i] * state.z  
-    end 
+function solution(state::Proshi_basic_state)
+    for i = 1:length(state.s)
+        state.s[i] .+= state.γ[i] * state.z
+    end
     state.s
-end  
+end
 
 #TODO list
 ## in cyclic/shuffled minibatchs are static  

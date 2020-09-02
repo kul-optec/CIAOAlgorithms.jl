@@ -10,7 +10,7 @@ struct FINITO_basic_iterable{R<:Real,C<:Union{R,Complex{R}},Tx<:AbstractArray{C}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_basic_state{R<:Real,Tx} 
+mutable struct FINITO_basic_state{R<:Real,Tx}
     s::Array{Tx}            # table of x_j- γ_j/N nabla f_j(x_j) 
     γ::Array{R}             # stepsize parameters 
     hat_γ::R                # average γ 
@@ -84,7 +84,7 @@ function Base.iterate(iter::FINITO_basic_iterable{R,C,Tx}) where {R,C,Tx}
     z, ~ = prox(iter.g, av, hat_γ)
 
     state = FINITO_basic_state(s, γ, hat_γ, av, z, ind, d)
-    
+
     return state, state
 end
 
@@ -109,7 +109,7 @@ function Base.iterate(
     # the iterate
     for i in state.ind[state.idxr]
         # perform the main steps 
-        gradient!(state.∇f_temp, iter.f[i], state.z) 
+        gradient!(state.∇f_temp, iter.f[i], state.z)
         state.∇f_temp .*= -(state.γ[i] / iter.N)
         state.∇f_temp .+= state.z
         @. state.av += (state.∇f_temp - state.s[i]) * (state.hat_γ / state.γ[i])
@@ -120,7 +120,7 @@ function Base.iterate(
     return state, state
 end
 
-solution(state::FINITO_basic_state) = state.z 
+solution(state::FINITO_basic_state) = state.z
 
 #TODO list
 ## in cyclic/shuffled minibatchs are static  

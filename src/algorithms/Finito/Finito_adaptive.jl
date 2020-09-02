@@ -10,7 +10,7 @@ struct FINITO_adaptive_iterable{R<:Real,C<:RealOrComplex{R},Tx<:AbstractArray{C}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_adaptive_state{R<:Real,Tx} 
+mutable struct FINITO_adaptive_state{R<:Real,Tx}
     s::Array{Tx}            # table of x_j stacked as array of arrays	
     ∇f::Array{Tx}           # table of gradients 
     γ::Array{R}             # stepsize parameter 
@@ -93,7 +93,7 @@ function Base.iterate(iter::FINITO_adaptive_iterable{R,C,Tx}) where {R,C,Tx}
     z, ~ = prox(iter.g, av, hat_γ)
 
     state = FINITO_adaptive_state(s, ∇f, γ, hat_γ, ind, fi_x, av, z)
-    
+
     return state, state
 end
 
@@ -130,7 +130,7 @@ function Base.iterate(
             real(dot(state.∇f[state.idxr], state.res)) +
             (0.5 * iter.N * iter.α / state.γ[state.idxr]) * (norm(state.res)^2)
         tol = 10 * eps(R) * (1 + abs(fi_z))
-        fi_z <= fi_model + tol && break
+        R(fi_z) <= fi_model + tol && break
 
         state.γ_b = state.γ[state.idxr]
         state.γ[state.idxr] *= 0.8
@@ -154,7 +154,7 @@ function Base.iterate(
     return state, state
 end
 
-solution(state::FINITO_adaptive_state) = state.z 
+solution(state::FINITO_adaptive_state) = state.z
 
 #TODO list
 ## the initial guess for L may be modified

@@ -58,41 +58,59 @@ struct Finito{R<:Real}
         @assert tol > 0
         @assert tol_b > 0
         @assert freq > 0
-        new(
-            γ,
-            sweeping,
-            LFinito,
-            adaptive,
-            minibatch,
-            maxit,
-            verbose,
-            freq,
-            α,
-            tol,
-            tol_b,
-        )
+        new(γ, sweeping, LFinito, adaptive, minibatch, maxit, verbose, freq, α, tol, tol_b)
     end
 end
 
-function (solver::Finito{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
+function (solver::Finito{R})(
+    x0::AbstractArray{C};
+    F = nothing,
+    g = ProximalOperators.Zero(),
+    L = nothing,
+    N = N,
+) where {R,C<:RealOrComplex{R}}
 
     stop(state) = false
 
     disp(it, state) = @printf "%5d | %.3e  \n" it state.hat_γ
 
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
+    F === nothing && (F = fill(ProximalOperators.Zero(), (N,)))
     # dispatching the iterator
     if solver.LFinito
-        iter = FINITO_LFinito_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
+        iter = FINITO_LFinito_iterable(
+            F,
+            g,
+            x0,
+            N,
+            L,
+            solver.γ,
+            solver.sweeping,
+            solver.minibatch[2],
+            solver.α,
         )
     elseif solver.adaptive
-        iter = FINITO_adaptive_iterable(F,g,x0,N,L,solver.tol,
-            solver.tol_b,solver.sweeping,solver.α,
+        iter = FINITO_adaptive_iterable(
+            F,
+            g,
+            x0,
+            N,
+            L,
+            solver.tol,
+            solver.tol_b,
+            solver.sweeping,
+            solver.α,
         )
     else
-        iter = FINITO_basic_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
+        iter = FINITO_basic_iterable(
+            F,
+            g,
+            x0,
+            N,
+            L,
+            solver.γ,
+            solver.sweeping,
+            solver.minibatch[2],
+            solver.α,
         )
     end
 
@@ -164,20 +182,51 @@ and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration uti
 """
 
 
-function iterator(solver::Finito{R}, x0::AbstractArray{C};F = nothing , g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )    
+function iterator(
+    solver::Finito{R},
+    x0::AbstractArray{C};
+    F = nothing,
+    g = ProximalOperators.Zero(),
+    L = nothing,
+    N = N,
+) where {R,C<:RealOrComplex{R}}
+    F === nothing && (F = fill(ProximalOperators.Zero(), (N,)))
     # dispatching the iterator
     if solver.LFinito
-        iter = FINITO_LFinito_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
+        iter = FINITO_LFinito_iterable(
+            F,
+            g,
+            x0,
+            N,
+            L,
+            solver.γ,
+            solver.sweeping,
+            solver.minibatch[2],
+            solver.α,
         )
     elseif solver.adaptive
-        iter = FINITO_adaptive_iterable(F,g,x0,N,L,solver.tol,
-            solver.tol_b,solver.sweeping,solver.α,
+        iter = FINITO_adaptive_iterable(
+            F,
+            g,
+            x0,
+            N,
+            L,
+            solver.tol,
+            solver.tol_b,
+            solver.sweeping,
+            solver.α,
         )
     else
-        iter = FINITO_basic_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
+        iter = FINITO_basic_iterable(
+            F,
+            g,
+            x0,
+            N,
+            L,
+            solver.γ,
+            solver.sweeping,
+            solver.minibatch[2],
+            solver.α,
         )
     end
     return iter

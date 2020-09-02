@@ -1,5 +1,6 @@
 module CIAOAlgorithms
 
+const RealOrComplex{R} = Union{R,Complex{R}}
 const Maybe{T} = Union{T, Nothing}
 
 # utulities 

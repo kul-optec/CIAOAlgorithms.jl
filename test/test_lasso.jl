@@ -1,12 +1,15 @@
 # # tests for lasso: 1/2\|Ax-b\|^2 + λ \|x\|_1
 
-@testset "Lasso ($T)" for T in [Float32, Float64]
-    using Test
-    using LinearAlgebra
-    using CIAOAlgorithms
-    using ProximalOperators
-    using Base.Iterators: take
-    using Random
+using Test
+using LinearAlgebra
+using CIAOAlgorithms
+using ProximalOperators
+using Base.Iterators: take
+using Random
+
+# @testset "Lasso ($T)" for T in [Float32, Float64, ComplexF64]
+# @testset "Lasso ($T)" for T in [ComplexF64]
+T = ComplexF64
 
     Random.seed!(0)
 
@@ -15,9 +18,9 @@
     N, n = 6, 3 # A in R^{N x n}   
     p = 2 # nonzeros in the solution
 
-    y_star = rand(T, N)
+    y_star = rand(R, N)
     y_star ./= norm(y_star) # y^star
-    C = rand(T, N, n) .* 2 .- 1
+    C = rand(R, N, n) .* 2 .- 1
     CTy = abs.(C' * y_star)
     # indices with decreasing order by abs
     perm = sortperm(CTy, rev = true)
@@ -69,7 +72,7 @@
         # basic finito
         @testset "basic Finito" for sweeping in collect(1:3)
             solver = CIAOAlgorithms.Finito{R}(maxit = maxit, sweeping = sweeping)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g,  L = L, N = N)
             @test cost_lasso(x_finito) - f_star < tol
         end
 
@@ -81,7 +84,7 @@
                 sweeping = sweeping,
                 LFinito = true,
             )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test cost_lasso(x_finito) - f_star < tol
         end
 
@@ -93,7 +96,7 @@
                 sweeping = sweeping,
                 adaptive = true,
             )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             # @test it_finito < it
             @test cost_lasso(x_finito) - f_star < tol
         end
@@ -106,7 +109,7 @@
                 sweeping = sweeping,
                 minibatch = (true, batch),
             )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test cost_lasso(x_finito) - f_star < tol
         end
 
@@ -119,7 +122,7 @@
                 LFinito = true,
                 minibatch = (true, batch),
             )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test cost_lasso(x_finito) - f_star < tol
         end
 
@@ -128,12 +131,12 @@
             @testset "randomized" begin
                 γ = N / maximum(L)
                 solver = CIAOAlgorithms.Finito{R}(maxit = maxit, γ = γ)
-                x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+                x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
                 @test cost_lasso(x_finito) - f_star < tol
             end
             @testset "cyclic" begin
                 solver = CIAOAlgorithms.Finito{R}(maxit = maxit)
-                x_finito, it_finito = solver(F, g, x0, L = maximum(L), N = N)
+                x_finito, it_finito = solver(x0, F = F, g = g, L = maximum(L), N = N)
                 @test cost_lasso(x_finito) - f_star < tol
             end
         end
@@ -148,7 +151,7 @@
                     LFinito = LFinito,
                     adaptive = adaptive
                 )
-            iter = CIAOAlgorithms.iterator(solver, F, g, x0, L = L, N = N)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, L = L, N = N)
             @test iter.x0 === x0
 
             for state in take(iter, 2)
@@ -165,19 +168,19 @@
         γ = 1 / (7 * maximum(L))
         @testset "SVRG-Base" begin
             solver = CIAOAlgorithms.SVRG{T}(maxit = maxit, γ = γ)
-            x_SVRG, it_SVRG = solver(F, g, x0, N = N)
+            x_SVRG, it_SVRG = solver(x0, F = F, g = g, N = N)
             @test cost_lasso(x_SVRG) - f_star < tol
         end
         @testset "SVRG++" begin
             solver = CIAOAlgorithms.SVRG{T}(maxit = 16, γ = γ, m = 1, plus = true)
-            x_SVRG, it_SVRG = solver(F, g, x0, N = N)
+            x_SVRG, it_SVRG = solver(x0, F = F, g = g, N = N)
             @test cost_lasso(x_SVRG) - f_star < tol
         end
 
         # test the iterator 
         @testset "the iterator" begin
             solver = CIAOAlgorithms.SVRG{T}(γ = γ)
-            iter = CIAOAlgorithms.iterator(solver, F, g, x0, N = N)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, N = N)
             @test iter.x0 === x0
 
             for state in take(iter, 2)
@@ -187,8 +190,8 @@
             next = iterate(iter) # next = (state, state)
             # one iteration with the solver 
             solver = CIAOAlgorithms.SVRG{T}(γ = γ, maxit= 1)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test solution(next[2]) == x_finito
         end
     end
-end
+# end

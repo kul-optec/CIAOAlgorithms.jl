@@ -17,8 +17,7 @@ using Printf
 using Base.Iterators
 using Random
 
-abstract type AbstractSVRGState end
-
+export solution
 
 include("SVRG_basic.jl")
 
@@ -44,11 +43,12 @@ struct SVRG{R<:Real}
     end
 end
 
-function (solver::SVRG{R})(f, g, x0; L = nothing, μ = nothing, N = N) where {R}
+function (solver::SVRG{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(),  L = nothing, μ = nothing, N = N) where {R,C<:RealOrComplex{R}}
 
     stop(state::SVRG_basic_state) = false
     disp(it, state) = @printf "%5d | %.3e  \n" it state.γ
 
+    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
     m = solver.m === nothing ? m = N : m = solver.m
 
     maxit = solver.maxit
@@ -59,7 +59,7 @@ function (solver::SVRG{R})(f, g, x0; L = nothing, μ = nothing, N = N) where {R}
 
 
     # dispatching the structure
-    iter = SVRG_basic_iterable(f, g, x0, N, L, μ, solver.γ, m, solver.plus)
+    iter = SVRG_basic_iterable(F, g, x0, N, L, μ, solver.γ, m, solver.plus)
     iter = take(halt(iter, stop), maxit)
     iter = enumerate(iter)
     num_iters, state_final = nothing, nothing
@@ -73,7 +73,7 @@ function (solver::SVRG{R})(f, g, x0; L = nothing, μ = nothing, N = N) where {R}
     if solver.verbose && mod(num_iters, solver.freq) !== 0
         disp(num_iters, state_final)
     end # for the final iteration
-    return state_final.z_full, num_iters
+    return solution(state_final), num_iters
 end
 
 
@@ -86,10 +86,10 @@ Instantiate the SVRG algorithm  for solving (strongly) convex optimization probl
 
 If `solver = SVRG(args...)`, then the above problem is solved with
 
-	solver(F, g, x0, N, L, μ)
+	solver(x0, [F, g, N, L, μ])
 
-    where F is an array containing f_i's, x0 is the initial point, and L, μ are arrays of 
-    smoothness and strong convexity moduli of f_i's; they is optional when γ is provided.  
+where F is an array containing f_i's, x0 is the initial point, and L, μ are arrays of 
+smoothness and strong convexity moduli of f_i's; they is optional when γ is provided.  
 
 Optional keyword arguments are:
 * `γ`: stepsize  
@@ -109,25 +109,24 @@ SVRG(; kwargs...) = SVRG(Float64; kwargs...)
 """
 If `solver = SVRG(args...)`, then 
 
-    itr = iterator(solver, F, g, x0, N, L)
+    itr = iterator(solver, F, g, x0, N, L, μ)
 
-    is an iterable object.
-    Note that [maxit, verbose, freq] fields of the solver are ignored here. 
+is an iterable object. Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 
-    The solution at a given state can be obtained using solution(state)
-    e.g. 
-    for state in Iterators.take(itr, maxit)
-        # do something using solution(state)
-    end
+The solution at any given state can be obtained using solution(state), e.g., 
+for state in Iterators.take(itr, maxit)
+    # do something using solution(state)
+end
 
-    See https://docs.julialang.org/en/v1/manual/interfaces/index.html 
-    and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration utilities
+See https://docs.julialang.org/en/v1/manual/interfaces/index.html 
+and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration utilities
 """
 
-function iterator(solver::SVRG{R}, f, g, x0; L = nothing, μ = nothing, N = N) where {R}
+function iterator(solver::SVRG{R}, x0::AbstractArray{C};F = nothing , g = ProximalOperators.Zero(),  L = nothing, μ = nothing, N = N) where {R,C<:RealOrComplex{R}}
+    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
     m = solver.m === nothing ? m = N : m = solver.m
     # dispatching the iterator
-    iter = SVRG_basic_iterable(f, g, x0, N, L, μ, solver.γ, m, solver.plus)
+    iter = SVRG_basic_iterable(F, g, x0, N, L, μ, solver.γ, m, solver.plus)
 
     return iter
 end

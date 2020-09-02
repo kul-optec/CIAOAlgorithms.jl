@@ -1,4 +1,4 @@
-struct SVRG_basic_iterable{R<:Real,Tx,Tf,Tg}
+struct SVRG_basic_iterable{R<:Real,C<:RealOrComplex{R},Tx<:AbstractArray{C},Tf,Tg}
     f::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
@@ -10,7 +10,7 @@ struct SVRG_basic_iterable{R<:Real,Tx,Tf,Tg}
     plus::Bool              # for SVRG++ variant 
 end
 
-mutable struct SVRG_basic_state{R<:Real,Tx} <: AbstractSVRGState
+mutable struct SVRG_basic_state{R<:Real,Tx}
     γ::R                    # stepsize 
     m::Int                  # number of inner loop updates
     av::Tx                  # the running average
@@ -35,7 +35,7 @@ function SVRG_basic_state(
     return SVRG_basic_state{R,Tx}(γ, m, av, z, z_full, w, ind, copy(av), copy(av))
 end
 
-function Base.iterate(iter::SVRG_basic_iterable{R,Tx}) where {R,Tx}
+function Base.iterate(iter::SVRG_basic_iterable{R}) where {R}
     N = iter.N
     ind = collect(1:N)
     m = iter.m === nothing ? m = N : m = iter.m
@@ -77,9 +77,9 @@ function Base.iterate(iter::SVRG_basic_iterable{R,Tx}) where {R,Tx}
 end
 
 function Base.iterate(
-    iter::SVRG_basic_iterable{R,Tx},
-    state::SVRG_basic_state{R,Tx},
-) where {R,Tx}
+    iter::SVRG_basic_iterable{R},
+    state::SVRG_basic_state{R},
+) where {R}
     # The inner cycle
     for i in rand(state.ind, state.m)
         gradient!(state.temp, iter.f[i], state.z_full)
@@ -105,5 +105,6 @@ function Base.iterate(
 
     return state, state
 end
+
 
 solution(state::SVRG_basic_state) = state.z_full

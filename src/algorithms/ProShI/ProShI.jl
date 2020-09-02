@@ -2,17 +2,7 @@
 # proximal gradient methods for nonsmooth nonconvex problems."
 # arXiv:1906.10053 (2019).
 #
-# Latafat. "Distributed proximal algorithms for large-scale structured optimization"
-# PhD thesis, KU Leuven, 7 2020.
-# 
-# Mairal, "Incremental majorization-minimization optimization with application to
-# large-scale machine learning."
-# SIAM Journal on Optimization 25, 2 (2015), 829–855.
-# 
-# Defazio, Domke, "Finito: A faster, permutable incremental gradient method
-# for big data problems."
-# In International Conference on Machine Learning (2014), pp. 1125-1133.
-#
+ 
 
 using LinearAlgebra
 using ProximalOperators
@@ -23,58 +13,41 @@ using Random
 
 export solution
 
-include("Finito_basic.jl")
-include("Finito_LFinito.jl")
-include("Finito_adaptive.jl")
+include("ProShI_basic.jl")
 
-
-struct Finito{R<:Real}
+struct Proshi{R<:Real}
     γ::Maybe{Union{Array{R},R}}
     sweeping::Int8
-    LFinito::Bool
-    adaptive::Bool
     minibatch::Tuple{Bool,Int}
     maxit::Int
     verbose::Bool
     freq::Int
     α::R
-    tol::R
-    tol_b::R
-    function Finito{R}(;
+    function Proshi{R}(;
         γ::Maybe{Union{Array{R},R}} = nothing,
         sweeping = 1,
-        LFinito::Bool = false,
-        adaptive::Bool = false,
         minibatch::Tuple{Bool,Int} = (false, 1),
         maxit::Int = 10000,
         verbose::Bool = false,
         freq::Int = 10000,
         α::R = R(0.999),
-        tol::R = R(1e-8),
-        tol_b::R = R(1e-9),
     ) where {R}
         @assert γ === nothing || minimum(γ) > 0
         @assert maxit > 0
-        @assert tol > 0
-        @assert tol_b > 0
         @assert freq > 0
         new(
             γ,
             sweeping,
-            LFinito,
-            adaptive,
             minibatch,
             maxit,
             verbose,
             freq,
             α,
-            tol,
-            tol_b,
         )
     end
 end
 
-function (solver::Finito{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
+function (solver::Proshi{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
 
     stop(state) = false
 
@@ -82,19 +55,9 @@ function (solver::Finito{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOper
 
     F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
     # dispatching the iterator
-    if solver.LFinito
-        iter = FINITO_LFinito_iterable(F,g,x0,N,L,solver.γ,
+    iter = Proshi_basic_iterable(F,g,x0,N,L,solver.γ,
             solver.sweeping,solver.minibatch[2],solver.α,
         )
-    elseif solver.adaptive
-        iter = FINITO_adaptive_iterable(F,g,x0,N,L,solver.tol,
-            solver.tol_b,solver.sweeping,solver.α,
-        )
-    else
-        iter = FINITO_basic_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
-        )
-    end
 
     iter = take(halt(iter, stop), solver.maxit)
     iter = enumerate(iter)
@@ -114,15 +77,15 @@ function (solver::Finito{R})(x0::AbstractArray{C}; F = nothing, g = ProximalOper
 end
 
 """
-    Finito([γ, sweeping, LFinito, adaptive, minibatch, maxit, verbose, freq, tol, tol_b])
+    Proshi([γ, sweeping, LProshi, adaptive, minibatch, maxit, verbose, freq, tol, tol_b])
 
-Instantiate the Finito algorithm for solving fully nonconvex optimization problems of the form
+Instantiate the Proshi algorithm for solving fully nonconvex optimization problems of the form
     
     minimize 1/N sum_{i=1}^N f_i(x) + g(x)
 
 where `f_i` are smooth and `g` is possibly nonsmooth, all of which may be nonconvex.  
 
-If `solver = Finito(args...)`, then the above problem is solved with
+If `solver = Proshi(args...)`, then the above problem is solved with
 
 	solver(x0, [F, g, N, L])
 
@@ -132,7 +95,7 @@ smoothness moduli of f_i's; it is optional in the adaptive mode or if γ is prov
 Optional keyword arguments are:
 * `γ`: an array of N stepsizes for each coordinate 
 * `sweeping::Int` 1 for uniform randomized (default), 2 for cyclic, 3 for shuffled 
-* `LFinito::Bool` low memory variant of the Finito/MISO algorithm
+* `LProshi::Bool` low memory variant of the Proshi/MISO algorithm
 * `adaptive::Bool` to activate adaptive smoothness parameter computation
 * `minibatch::(Bool,Int)` to use batchs of a given size    
 * `maxit::Integer` (default: `10000`), maximum number of iterations to perform.
@@ -143,14 +106,14 @@ Optional keyword arguments are:
 * `tol_b::R` tolerance for the backtrack (default: `1e-9`)
 """
 
-Finito(::Type{R}; kwargs...) where {R} = Finito{R}(; kwargs...)
-Finito(; kwargs...) = Finito(Float64; kwargs...)
+Proshi(::Type{R}; kwargs...) where {R} = Proshi{R}(; kwargs...)
+Proshi(; kwargs...) = Proshi(Float64; kwargs...)
 
 
 """
-If `solver = Finito(args...)`, then 
+If `solver = Proshi(args...)`, then 
 
-    itr = iterator(solver, F, g, x0, N, L)
+    itr = iterator(solver, x0, [F, g, N, L])
 
 is an iterable object. Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 
@@ -164,21 +127,13 @@ and https://docs.julialang.org/en/v1/base/iterators/ for a list of iteration uti
 """
 
 
-function iterator(solver::Finito{R}, x0::AbstractArray{C};F = nothing , g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
-    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )    
+function iterator(solver::Proshi{R}, x0::AbstractArray{C}; F = nothing, g = ProximalOperators.Zero(), L = nothing, N = N) where {R,C<:RealOrComplex{R}}
+    F === nothing && ( F = fill(ProximalOperators.Zero(),(N,)) )
     # dispatching the iterator
-    if solver.LFinito
-        iter = FINITO_LFinito_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
-        )
-    elseif solver.adaptive
-        iter = FINITO_adaptive_iterable(F,g,x0,N,L,solver.tol,
-            solver.tol_b,solver.sweeping,solver.α,
-        )
-    else
-        iter = FINITO_basic_iterable(F,g,x0,N,L,solver.γ,
-            solver.sweeping,solver.minibatch[2],solver.α,
-        )
-    end
+    iter = Proshi_basic_iterable(F,g,x0,N,L,solver.γ,
+        solver.sweeping,solver.minibatch[2],solver.α,
+    )
     return iter
 end
+
+

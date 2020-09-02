@@ -1,11 +1,12 @@
 # # tests for logistic regression: sum_i log(1+exp(-b_i<a_i,x>)) + λ \|x\|_1
 
-@testset "logistic-l1" begin
+using LinearAlgebra
+using CIAOAlgorithms
+using ProximalOperators
+using ProximalAlgorithms: IterationTools
+using Base.Iterators: take
 
-    using LinearAlgebra
-    using CIAOAlgorithms
-    using ProximalOperators
-    using ProximalAlgorithms: IterationTools
+@testset "logistic-l1" begin
 
     T = Float64
     # create the two classes 
@@ -26,7 +27,7 @@
     ys = [fill(1.0, size(x_class1, 1)); fill(-1.0, size(x_class2, 1))]
 
     # preparations for the solver 
-    x_star = [0.0, 2.5591213030017443, -3.062235206001081, 0.0, 0.0]
+    x_star =   [0.0, 0.924160995722576, -1.1343956493097298, 0.0, 0.0] 
 
     N, n = size(ys, 1), size(xs, 2)
 
@@ -41,12 +42,12 @@
     end
 
     # compute L for the nonadaptive case 
-    lam = 0.1 / N
+    lam = 1 / N
     g = NormL1(lam)
-    x0 = 10 * zeros(n)
+    x0 = ones(n)
 
-    maxit = 1e5 |> Int64
-    tol = 1e-3
+    maxit = 8000
+    tol = 1e-4
 
     @testset "Finito" begin
 
@@ -55,8 +56,8 @@
         # basic finito  
         @testset "nominal Finito" for sweeping in collect(1:3)
             solver = CIAOAlgorithms.Finito{T}(maxit = maxit, sweeping = sweeping)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(x_finito - x_star) < tol
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test norm(x_finito - x_star, Inf) < tol
         end
 
         # limited memory finito 
@@ -64,8 +65,8 @@
             # @testset "cyclical" begin
             solver =
                 CIAOAlgorithms.Finito{T}(maxit = maxit, sweeping = sweeping, LFinito = true)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(x_finito - x_star) < tol
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test norm(x_finito - x_star, Inf) < tol
         end
 
         # basic finito with minibatch 
@@ -76,8 +77,8 @@
                 sweeping = sweeping,
                 minibatch = (true, batch),
             )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(x_finito - x_star) < tol
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test norm(x_finito - x_star, Inf) < tol
         end
 
         # limited memory finito with minibatch 
@@ -89,8 +90,8 @@
                 LFinito = true,
                 minibatch = (true, batch),
             )
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-            @test norm(x_finito - x_star) < tol
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test norm(x_finito - x_star, Inf) < tol
         end
 
         # test with user defined stepsizes
@@ -98,13 +99,13 @@
             @testset "randomized" begin
                 γ = N / maximum(L)
                 solver = CIAOAlgorithms.Finito{T}(maxit = maxit, γ = γ)
-                x_finito, it_finito = solver(F, g, x0, L = L, N = N)
-                @test norm(x_finito - x_star) < tol
+                x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+                @test norm(x_finito - x_star, Inf) < tol
             end
             @testset "cyclic" begin
                 solver = CIAOAlgorithms.Finito{T}(maxit = maxit)
-                x_finito, it_finito = solver(F, g, x0, L = maximum(L), N = N)
-                @test norm(x_finito - x_star) < tol
+                x_finito, it_finito = solver(x0, F = F, g = g, L = maximum(L), N = N)
+                @test norm(x_finito - x_star, Inf) < tol
             end
         end
 
@@ -115,14 +116,14 @@
                     LFinito = LFinito,
                     maxit = 10
                 )
-            iter = CIAOAlgorithms.iterator(solver, F, g, x0, L = L, N = N)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, L = L, N = N)
             @test iter.x0 === x0
 
             for state in take(iter, 2)
                 @test solution(state) === state.z
                 @test eltype(solution(state)) == T
             end
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test solution(IterationTools.loop(take(iter,10))) == x_finito
         end        
     end
@@ -132,19 +133,19 @@
         γ = 1 / (10 * maximum(L))
         @testset "SVRG-Base" begin
             solver = CIAOAlgorithms.SVRG{T}(maxit = maxit, γ = γ)
-            x_SVRG, it_SVRG = solver(F, g, x0, N = N)
+            x_SVRG, it_SVRG = solver(x0, F = F, g = g, N = N)
             @test norm(x_SVRG - x_star) < tol
         end
         @testset "SVRG++" begin
             solver = CIAOAlgorithms.SVRG{T}(maxit = 16, γ = γ, m = N, plus = true)
-            x_SVRG, it_SVRG = solver(F, g, x0, N = N)
+            x_SVRG, it_SVRG = solver(x0, F = F, g = g, N = N)
             @test norm(x_SVRG - x_star) < tol
         end
 
         # test the iterator 
         @testset "the iterator" begin
             solver = CIAOAlgorithms.SVRG{T}(γ = γ)
-            iter = CIAOAlgorithms.iterator(solver, F, g, x0, N = N)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, N = N)
             @test iter.x0 === x0
 
             for state in take(iter, 2)
@@ -154,7 +155,7 @@
             next = iterate(iter) # next = (state, state)
             # one iteration with the solver 
             solver = CIAOAlgorithms.SVRG{T}(γ = γ, maxit= 1)
-            x_finito, it_finito = solver(F, g, x0, L = L, N = N)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
             @test solution(next[2]) == x_finito
         end
     end

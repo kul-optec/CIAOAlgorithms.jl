@@ -1,4 +1,4 @@
-struct FINITO_LFinito_iterable{R<:Real,Tx,Tf,Tg}
+struct FINITO_LFinito_iterable{R<:Real,C<:RealOrComplex{R},Tx<:AbstractArray{C},Tf,Tg}
     f::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
@@ -37,7 +37,7 @@ function FINITO_LFinito_state(γ::Array{R}, hat_γ::R, av::Tx, ind, d) where {R,
     )
 end
 
-function Base.iterate(iter::FINITO_LFinito_iterable{R,Tx}) where {R,Tx}
+function Base.iterate(iter::FINITO_LFinito_iterable{R}) where {R}
     N = iter.N
     r = iter.batch # batch size 
     # create index sets 
@@ -76,9 +76,9 @@ function Base.iterate(iter::FINITO_LFinito_iterable{R,Tx}) where {R,Tx}
 end
 
 function Base.iterate(
-    iter::FINITO_LFinito_iterable{R,Tx},
-    state::FINITO_LFinito_state{R,Tx},
-) where {R,Tx}
+    iter::FINITO_LFinito_iterable{R},
+    state::FINITO_LFinito_state{R},
+) where {R}
     # full update 
     prox!(state.z_full, iter.g, state.av, state.hat_γ)
     state.av .= state.z_full

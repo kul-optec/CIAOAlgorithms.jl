@@ -1,4 +1,4 @@
-struct FINITO_basic_iterable{R<:Real,C<:Union{R,Complex{R}},Tx<:AbstractArray{C},Tf,Tg}
+struct Proshi_basic_iterable{R<:Real,C<:Union{R,Complex{R}},Tx<:AbstractArray{C},Tf,Tg}
     f::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
@@ -10,7 +10,7 @@ struct FINITO_basic_iterable{R<:Real,C<:Union{R,Complex{R}},Tx<:AbstractArray{C}
     α::R                    # in (0, 1), e.g.: 0.99
 end
 
-mutable struct FINITO_basic_state{R<:Real,Tx} 
+mutable struct Proshi_basic_state{R<:Real,Tx} 
     s::Array{Tx}            # table of x_j- γ_j/N nabla f_j(x_j) 
     γ::Array{R}             # stepsize parameters 
     hat_γ::R                # average γ 
@@ -25,8 +25,8 @@ mutable struct FINITO_basic_state{R<:Real,Tx}
     inds::Array{Int}        # needed for shuffled only  
 end
 
-function FINITO_basic_state(s, γ, hat_γ::R, av::Tx, z::Tx, ind, d) where {R,Tx}
-    return FINITO_basic_state{R,Tx}(
+function Proshi_basic_state(s, γ, hat_γ::R, av::Tx, z::Tx, ind, d) where {R,Tx}
+    return Proshi_basic_state{R,Tx}(
         s,
         γ,
         hat_γ,
@@ -41,7 +41,7 @@ function FINITO_basic_state(s, γ, hat_γ::R, av::Tx, z::Tx, ind, d) where {R,Tx
     )
 end
 
-function Base.iterate(iter::FINITO_basic_iterable{R,C,Tx}) where {R,C,Tx}
+function Base.iterate(iter::Proshi_basic_iterable{R,C,Tx}) where {R,C,Tx}
     N = iter.N
     # define the batches
     r = iter.batch # batch size 
@@ -79,18 +79,19 @@ function Base.iterate(iter::FINITO_basic_iterable{R,C,Tx}) where {R,C,Tx}
         push!(s, iter.x0 - γ[i] / N * ∇f) # table of x_i
     end
     #initializing the vectors 
-    hat_γ = 1 / sum(1 ./ γ)
-    av = hat_γ * (sum(s ./ γ)) # the running average  
-    z, ~ = prox(iter.g, av, hat_γ)
-
-    state = FINITO_basic_state(s, γ, hat_γ, av, z, ind, d)
+    hat_γ = sum(γ)
+    av = sum(s) # the running average  
+    z, ~ = prox(iter.g, av, hat_γ) # w in [1]
+    z .-= av
+    z ./= hat_γ 
+    state = Proshi_basic_state(s, γ, hat_γ, av, z, ind, d)
     
     return state, state
 end
 
 function Base.iterate(
-    iter::FINITO_basic_iterable{R},
-    state::FINITO_basic_state{R},
+    iter::Proshi_basic_iterable{R},
+    state::Proshi_basic_state{R},
 ) where {R}
     # manipulating indices 
     if iter.sweeping == 1 # uniformly random    
@@ -109,18 +110,26 @@ function Base.iterate(
     # the iterate
     for i in state.ind[state.idxr]
         # perform the main steps 
-        gradient!(state.∇f_temp, iter.f[i], state.z) 
+        state.av .-= state.s[i]
+        @. state.s[i] += state.γ[i]*state.z
+        gradient!(state.∇f_temp, iter.f[i], state.s[i]) 
         state.∇f_temp .*= -(state.γ[i] / iter.N)
-        state.∇f_temp .+= state.z
-        @. state.av += (state.∇f_temp - state.s[i]) * (state.hat_γ / state.γ[i])
+        state.∇f_temp .+= state.s[i]
+        state.av .+= state.∇f_temp
         state.s[i] .= state.∇f_temp  #update x_i
     end
     prox!(state.z, iter.g, state.av, state.hat_γ)
-
+    state.z .-= state.av
+    state.z ./= state.hat_γ      
     return state, state
 end
 
-solution(state::FINITO_basic_state) = state.z 
+function solution(state::Proshi_basic_state) 
+    for i in 1:length(state.s)
+        state.s[i] .+= state.γ[i] * state.z  
+    end 
+    state.s
+end  
 
 #TODO list
 ## in cyclic/shuffled minibatchs are static  

@@ -21,9 +21,9 @@ Simple Lasso and logisitc regression test examples can be found [here](test).
 
 Algorithm                             | Function      | Reference
 --------------------------------------|---------------|-----------
-Finito/MISO/DIAG  | [`Finito`](src/algorithms/Finito.jl) | [[1]][Defazio2014Finito], [[3]][Mairal2015Incremental], [[6]][Mokhtari2018Surpassing], [[7]][Latafat2019Block]
-ProShI  | [`Proshi`](src/algorithms/ProSchI.jl) | [[7]][Latafat2019Block]
-SVRG/SVRG++  | [`SVRG`](src/algorithms/SVRG.jl) | [[2]][Xiao2014Proximal], [[4]][AllenZhu2016Improved], [[5]][Reddi2016Proximal]
+Finito/MISO/DIAG  | [`Finito`](src/algorithms/Finito) | [[1]][Defazio2014Finito], [[3]][Mairal2015Incremental], [[6]][Mokhtari2018Surpassing], [[7]][Latafat2019Block]
+ProShI  | [`Proshi`](src/algorithms/ProShI) | [[7]][Latafat2019Block]
+SVRG/SVRG++  | [`SVRG`](src/algorithms/SVRG) | [[2]][Xiao2014Proximal], [[4]][AllenZhu2016Improved], [[5]][Reddi2016Proximal]
 
 ### References
 

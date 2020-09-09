@@ -1,5 +1,5 @@
 struct Proshi_basic_iterable{R<:Real,C<:Union{R,Complex{R}},Tx<:AbstractArray{C},Tf,Tg}
-    f::Array{Tf}            # smooth term  
+    F::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
     N::Int                  # number of data points in the finite sum problem 
@@ -75,7 +75,7 @@ function Base.iterate(iter::Proshi_basic_iterable{R,C,Tx}) where {R,C,Tx}
     # computing the gradients and updating the table s 
     s = Vector{Tx}(undef, 0)
     for i = 1:N
-        ∇f, ~ = gradient(iter.f[i], iter.x0)
+        ∇f, ~ = gradient(iter.F[i], iter.x0)
         push!(s, iter.x0 - γ[i] / N * ∇f) # table of x_i
     end
     #initializing the vectors 
@@ -112,7 +112,7 @@ function Base.iterate(
         # perform the main steps 
         state.av .-= state.s[i]
         @. state.s[i] += state.γ[i] * state.z
-        gradient!(state.∇f_temp, iter.f[i], state.s[i])
+        gradient!(state.∇f_temp, iter.F[i], state.s[i])
         state.∇f_temp .*= -(state.γ[i] / iter.N)
         state.∇f_temp .+= state.s[i]
         state.av .+= state.∇f_temp

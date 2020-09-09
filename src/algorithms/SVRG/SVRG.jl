@@ -116,7 +116,7 @@ SVRG(; kwargs...) = SVRG(Float64; kwargs...)
 """
 If `solver = SVRG(args...)`, then 
 
-    itr = iterator(solver, F, g, x0, N, L, μ)
+    itr = iterator(solver, [F, g, x0, N, L, μ])
 
 is an iterable object. Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 

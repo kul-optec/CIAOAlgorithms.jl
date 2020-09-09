@@ -1,5 +1,5 @@
 struct FINITO_adaptive_iterable{R<:Real,C<:RealOrComplex{R},Tx<:AbstractArray{C},Tf,Tg}
-    f::Array{Tf}            # smooth term  
+    F::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
     N::Int                  # of data points in the finite sum problem 
@@ -64,7 +64,7 @@ function Base.iterate(iter::FINITO_adaptive_iterable{R,C,Tx}) where {R,C,Tx}
     ∇f = fill(iter.x0, (N,))
     fi_x = zeros(R, N)    # compute the cost for the case of lineasearch 
     for i = 1:N
-        ∇f[i], fi_x[i] = gradient(iter.f[i], iter.x0)
+        ∇f[i], fi_x[i] = gradient(iter.F[i], iter.x0)
         push!(s, copy(iter.x0)) # table of x_i
     end
     # updating the stepsize 
@@ -72,13 +72,13 @@ function Base.iterate(iter::FINITO_adaptive_iterable{R,C,Tx}) where {R,C,Tx}
     for i = 1:N
         L_int = zeros(N)
         xeps = iter.x0 .+ one(R)
-        grad_f_xeps, f_xeps = gradient(iter.f[i], xeps)
+        grad_f_xeps, f_xeps = gradient(iter.F[i], xeps)
         nmg = norm(grad_f_xeps - ∇f[i])
         t = 1
         while nmg < eps(R)  # in case xeps has the same gradient
             println("initial upper bound for L too small")
             xeps = iter.x0 .+ rand(t * [-1, 1], size(iter.x0))
-            grad_f_xeps, f_xeps = gradient(iter.f[i], xeps)
+            grad_f_xeps, f_xeps = gradient(iter.F[i], xeps)
             nmg = norm(grad_f_xeps - ∇f[i])
             t *= 2
         end
@@ -124,7 +124,7 @@ function Base.iterate(
             @warn "parameter `γ` became too small ($(state.γ))"
             return nothing
         end
-        ~, fi_z = gradient(iter.f[state.idxr], state.z)
+        ~, fi_z = gradient(iter.F[state.idxr], state.z)
         fi_model =
             state.fi_x[state.idxr] +
             real(dot(state.∇f[state.idxr], state.res)) +
@@ -147,7 +147,7 @@ function Base.iterate(
     @. state.av += (state.hat_γ / state.γ[state.idxr]) * (state.z .- state.s[state.idxr])
     state.s[state.idxr] .= state.z  #update x_i
     @. state.av += (state.hat_γ / iter.N) * state.∇f[state.idxr]
-    state.fi_x[state.idxr] = gradient!(state.∇f[state.idxr], iter.f[state.idxr], state.z)
+    state.fi_x[state.idxr] = gradient!(state.∇f[state.idxr], iter.F[state.idxr], state.z)
     @. state.av -= (state.hat_γ / iter.N) * state.∇f[state.idxr]
     prox!(state.z, iter.g, state.av, state.hat_γ)
 

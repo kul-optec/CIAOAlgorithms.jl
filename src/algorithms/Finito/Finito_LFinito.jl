@@ -1,5 +1,5 @@
 struct FINITO_LFinito_iterable{R<:Real,C<:RealOrComplex{R},Tx<:AbstractArray{C},Tf,Tg}
-    f::Array{Tf}            # smooth term  
+    F::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
     N::Int                    # of data points in the finite sum problem 
@@ -66,7 +66,7 @@ function Base.iterate(iter::FINITO_LFinito_iterable{R}) where {R}
     hat_γ = 1 / sum(1 ./ γ)
     av = copy(iter.x0)
     for i = 1:N
-        ∇f, ~ = gradient(iter.f[i], iter.x0)
+        ∇f, ~ = gradient(iter.F[i], iter.x0)
         ∇f .*= hat_γ / N
         av .-= ∇f
     end
@@ -83,7 +83,7 @@ function Base.iterate(
     prox!(state.z_full, iter.g, state.av, state.hat_γ)
     state.av .= state.z_full
     for i = 1:iter.N
-        gradient!(state.∇f_temp, iter.f[i], state.z_full) # update the gradient
+        gradient!(state.∇f_temp, iter.F[i], state.z_full) # update the gradient
         state.av .-= (state.hat_γ / iter.N) .* state.∇f_temp
     end
     iter.sweeping == 3 && (state.inds = randperm(state.d)) # shuffled
@@ -91,9 +91,9 @@ function Base.iterate(
     for j in state.inds
         prox!(state.z, iter.g, state.av, state.hat_γ)
         for i in state.ind[j]
-            gradient!(state.∇f_temp, iter.f[i], state.z_full) # update the gradient
+            gradient!(state.∇f_temp, iter.F[i], state.z_full) # update the gradient
             state.av .+= (state.hat_γ / iter.N) .* state.∇f_temp
-            gradient!(state.∇f_temp, iter.f[i], state.z) # update the gradient
+            gradient!(state.∇f_temp, iter.F[i], state.z) # update the gradient
             state.av .-= (state.hat_γ / iter.N) .* state.∇f_temp
             state.av .+= (state.hat_γ / state.γ[i]) .* (state.z .- state.z_full)
         end

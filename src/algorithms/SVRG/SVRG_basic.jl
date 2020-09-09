@@ -1,5 +1,5 @@
 struct SVRG_basic_iterable{R<:Real,C<:RealOrComplex{R},Tx<:AbstractArray{C},Tf,Tg}
-    f::Array{Tf}            # smooth term  
+    F::Array{Tf}            # smooth term  
     g::Tg                   # nonsmooth term 
     x0::Tx                  # initial point
     N::Int                  # of data points in the finite sum problem 
@@ -57,7 +57,7 @@ function Base.iterate(iter::SVRG_basic_iterable{R}) where {R}
     # initializing the vectors 
     av = zero(iter.x0)
     for i = 1:N
-        ∇f, ~ = gradient(iter.f[i], iter.x0)
+        ∇f, ~ = gradient(iter.F[i], iter.x0)
         ∇f ./= N
         av .+= ∇f
     end
@@ -71,8 +71,8 @@ end
 function Base.iterate(iter::SVRG_basic_iterable{R}, state::SVRG_basic_state{R}) where {R}
     # The inner cycle
     for i in rand(state.ind, state.m)
-        gradient!(state.temp, iter.f[i], state.z_full)
-        gradient!(state.∇f_temp, iter.f[i], state.w)
+        gradient!(state.temp, iter.F[i], state.z_full)
+        gradient!(state.∇f_temp, iter.F[i], state.w)
         state.temp .-= state.∇f_temp
         state.temp .-= state.av
         state.temp .*= state.γ
@@ -86,7 +86,7 @@ function Base.iterate(iter::SVRG_basic_iterable{R}, state::SVRG_basic_state{R}) 
     state.z = zero(state.z)  # for next iterate 
     state.av .= state.z
     for i = 1:iter.N
-        gradient!(state.∇f_temp, iter.f[i], state.z_full)
+        gradient!(state.∇f_temp, iter.F[i], state.z_full)
         state.∇f_temp ./= iter.N
         state.av .+= state.∇f_temp
     end

@@ -4,10 +4,10 @@
 #
 # Reddi, Sra, Poczos, and Smola, "Proximal stochastic methods for nonsmooth
 # nonconvex finite-sum optimization." In Advances in Neural Information 
-# Processing Systems (2016), pp. 1145–1153.
+# Processing Systems, pp. 1145–1153 (2016).
 #
 # Schmidt, Le Roux, Bach, "Minimizing finite sums with the stochastic average gradient"
-# Mathematical Programming, 162(1-2), 83-112.
+# Mathematical Programming, 162(1-2), 83-112 (2017).
 # 
 
 using LinearAlgebra
@@ -102,7 +102,7 @@ In: Advances in neural information processing systems, pp. 1646–1654 (2014).
 
 [2] Reddi, Sra, Poczos, and Smola, "Proximal stochastic methods for nonsmooth
 nonconvex finite-sum optimization" In Advances in Neural Information 
-Processing Systems (2016), pp. 1145–1153.
+Processing Systems, pp. 1145–1153 (2016).
 """
 
 SAGA(::Type{R}; kwargs...) where {R} = SAGA{R}(; kwargs...)
@@ -167,7 +167,7 @@ Optional keyword arguments are:
 References:
 
 [1] Schmidt, Le Roux, Bach, "Minimizing finite sums with the stochastic average gradient"
-Mathematical Programming, 162(1-2), 83-112.
+Mathematical Programming, 162(1-2), 83-112 (2017).
 
 """
 

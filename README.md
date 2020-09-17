@@ -28,7 +28,7 @@ Algorithm                             | Function      | Reference
 Finito/MISO/DIAG  | [`Finito`](src/algorithms/Finito/Finito.jl) | [[1]][Defazio2014Finito], [[4]][Mairal2015Incremental], [[8]][Mokhtari2018Surpassing], [[9]][Latafat2019Block]
 ProShI  | [`Proshi`](src/algorithms/ProShI/ProShI.jl) | [[9]][Latafat2019Block]
 SAGA  | [`SAGA`](src/algorithms/SAGA_SAG/SAGA.jl) | [[3]][Defazio2014SAGA], [[6]][Defazio2014SAGA]
-SAG  | [`SAGA`](src/algorithms/SAGA_SAG/SAGA.jl) | [[7]][Schmidt2017Minimizing]
+SAG  | [`SAG`](src/algorithms/SAGA_SAG/SAGA.jl) | [[7]][Schmidt2017Minimizing]
 SVRG/SVRG++  | [`SVRG`](src/algorithms/SVRG/SVRG.jl) | [[2]][Xiao2014Proximal], [[4]][AllenZhu2016Improved], [[5]][Reddi2016Proximal]
 
 ### References

@@ -168,7 +168,7 @@ Finito(; kwargs...) = Finito(Float64; kwargs...)
 """
 If `solver = Finito(args...)`, then 
 
-    itr = iterator(solver, [F, g, x0, N, L])
+    itr = iterator(solver, x0, [F, g, N, L])
 
 is an iterable object. Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 

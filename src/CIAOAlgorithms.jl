@@ -10,5 +10,6 @@ include("utilities/indexingUtilities.jl")
 include("algorithms/Finito/Finito.jl")
 include("algorithms/ProShI/ProShI.jl")
 include("algorithms/SVRG/SVRG.jl")
+include("algorithms/SAGA_SAG/SAGA.jl")
 
 end # module

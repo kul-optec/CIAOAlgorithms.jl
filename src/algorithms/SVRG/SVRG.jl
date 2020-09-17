@@ -96,7 +96,7 @@ If `solver = SVRG(args...)`, then the above problem is solved with
 	solver(x0, [F, g, N, L, μ])
 
 where F is an array containing f_i's, x0 is the initial point, and L, μ are arrays of 
-smoothness and strong convexity moduli of f_i's; they is optional when γ is provided.  
+smoothness and strong convexity moduli of f_i's; they are optional when γ is provided.  
 
 Optional keyword arguments are:
 * `γ`: stepsize  
@@ -116,7 +116,7 @@ SVRG(; kwargs...) = SVRG(Float64; kwargs...)
 """
 If `solver = SVRG(args...)`, then 
 
-    itr = iterator(solver, [F, g, x0, N, L, μ])
+    itr = iterator(solver, x0, [F, g, N, L, μ])
 
 is an iterable object. Note that [maxit, verbose, freq] fields of the solver are ignored here. 
 

@@ -1,11 +1,11 @@
 # # tests for logistic regression: sum_i log(1+exp(-b_i<a_i,x>)) + λ \|x\|_1
 
 @testset "logistic-l1" begin
-using LinearAlgebra
-using CIAOAlgorithms
-using ProximalOperators
-using ProximalAlgorithms: IterationTools
-using Base.Iterators: take
+    using LinearAlgebra
+    using CIAOAlgorithms
+    using ProximalOperators
+    using ProximalAlgorithms: IterationTools
+    using Base.Iterators: take
 
     T = Float64
     # create the two classes 
@@ -154,4 +154,73 @@ using Base.Iterators: take
         end
     end
 
+
+    @testset "SAGA" begin
+
+        ## test the solver
+        @testset "SAGA-Base" begin
+            solver = CIAOAlgorithms.SAGA{T}(maxit = maxit)
+            x_SAGA, it_SAGA = solver(x0, F = F, g = g, N = N, L = L)
+            norm(x_SAGA - x_star) < tol
+        end
+        @testset "SAGA-stepsize" begin
+            γ = 1 / (3 * maximum(L))
+            solver = CIAOAlgorithms.SAGA{T}(maxit = maxit, γ = γ)
+            x_SAGA, it_SAGA = solver(x0, F = F, g = g, N = N)
+            norm(x_SAGA - x_star) < tol
+        end
+
+        # test the iterator 
+        @testset "the iterator" begin
+            γ = 1 / (3 * maximum(L))
+            solver = CIAOAlgorithms.SAGA{T}(γ = γ)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, N = N)
+            @test iter.x0 === x0
+
+            for state in take(iter, 2)
+                @test solution(state) === state.z
+                @test eltype(solution(state)) == T
+            end
+            next = iterate(iter) # next = (state, state)
+            # one iteration with the solver 
+            solver = CIAOAlgorithms.SAGA{T}(γ = γ, maxit = 1)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test solution(next[2]) == x_finito
+        end
+    end
+
+    @testset "SAG" begin
+        # note that proximal SAG may not be theoretically convergent
+        # maxit = 10000
+        ## test the solver
+        @testset "SAG-Base" begin
+            solver = CIAOAlgorithms.SAG(T, maxit = maxit)
+            x_SAG, it_SAG = solver(x0, F = F, g = g, N = N, L = L)
+            norm(x_SAG - x_star) < tol
+        end
+        @testset "SAG" begin
+            γ = 1 / (16 * maximum(L))
+            solver = CIAOAlgorithms.SAG(T, maxit = maxit, γ = γ)
+            x_SAG, it_SAG = solver(x0, F = F, g = g, N = N)
+            norm(x_SAG - x_star) < tol
+        end
+
+        # test the iterator 
+        @testset "the iterator" begin
+            γ = 1 / (16 * maximum(L))
+            solver = CIAOAlgorithms.SAG(T, γ = γ)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, N = N)
+            @test iter.x0 === x0
+
+            for state in take(iter, 2)
+                @test solution(state) === state.z
+                @test eltype(solution(state)) == T
+            end
+            next = iterate(iter) # next = (state, state)
+            # one iteration with the solver 
+            solver = CIAOAlgorithms.SAG(T, γ = γ, maxit = 1)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test solution(next[2]) == x_finito
+        end
+    end
 end

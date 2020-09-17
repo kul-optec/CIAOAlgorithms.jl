@@ -1,7 +1,7 @@
-# CIAOAlgorithms
+# CIAOAlgorithms.jl
 
-[![Build status](https://github.com/kul-forbes/CIAOAlgorithms.jl/workflows/CI/badge.svg)](https://github.com/kul-forbes/CIAOAlgorithms.jl/actions?query=workflow%3ACI)
-[![codecov.io](http://codecov.io/github/kul-forbes/CIAOAlgorithms.jl/coverage.svg?branch=master)](http://codecov.io/github/kul-forbes/CIAOAlgorithms.jl?branch=master)
+[![Build status](https://github.com/kul-forbes/CIAOAlgorithms/workflows/CI/badge.svg)](https://github.com/kul-forbes/CIAOAlgorithms/actions?query=workflow%3ACI)
+[![codecov.io](http://codecov.io/github/kul-forbes/CIAOAlgorithms/coverage.svg?branch=master)](http://codecov.io/github/kul-forbes/CIAOAlgorithms?branch=master)
 
 CIAOAlgorithms implements Block-Coordinate and Incremental Aggregated Optimization Algorithms for minimizations of the form
 ```math

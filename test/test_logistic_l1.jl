@@ -45,7 +45,7 @@
     g = NormL1(lam)
     x0 = ones(n)
 
-    maxit = 8000
+    maxit = 9000
     tol = 1e-4
 
     @testset "Finito" begin

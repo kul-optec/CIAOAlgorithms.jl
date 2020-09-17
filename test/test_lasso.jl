@@ -192,4 +192,77 @@
             @test solution(next[2]) == x_finito
         end
     end
+
+    @testset "SAGA" begin
+
+        ## test the solver
+        @testset "SAGA-Base" begin
+            solver = CIAOAlgorithms.SAGA{R}(maxit = maxit)
+            x_SAGA, it_SAGA = solver(x0, F = F, g = g, N = N, L = L)
+            @test cost_lasso(x_SAGA) - f_star < tol
+            @test eltype(x_SAGA) == T
+        end
+        @testset "SAGA-stepsize" begin
+            γ = 1 / (3 * maximum(L))
+            solver = CIAOAlgorithms.SAGA{R}(maxit = maxit, γ = γ)
+            x_SAGA, it_SAGA = solver(x0, F = F, g = g, N = N)
+            @test cost_lasso(x_SAGA) - f_star < tol
+            @test eltype(x_SAGA) == T
+        end
+
+        # test the iterator 
+        @testset "the iterator" begin
+            γ = 1 / (3 * maximum(L))
+            solver = CIAOAlgorithms.SAGA{R}(γ = γ)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, N = N)
+            @test iter.x0 === x0
+
+            for state in take(iter, 2)
+                @test solution(state) === state.z
+                @test eltype(solution(state)) == T
+            end
+            next = iterate(iter) # next = (state, state)
+            # one iteration with the solver 
+            solver = CIAOAlgorithms.SAGA{R}(γ = γ, maxit = 1)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test solution(next[2]) == x_finito
+        end
+    end
+
+    @testset "SAG" begin
+        # note that proximal SAG may not be theoretically convergent
+        maxit = 10000
+        ## test the solver
+        @testset "SAG-Base" begin
+            solver = CIAOAlgorithms.SAG(R, maxit = maxit)
+            x_SAG, it_SAG = solver(x0, F = F, g = g, N = N, L = L)
+            @test cost_lasso(x_SAG) - f_star < tol
+            @test eltype(x_SAG) == T
+        end
+        @testset "SAG" begin
+            γ = 1 / (16 * maximum(L))
+            solver = CIAOAlgorithms.SAG(R, maxit = maxit, γ = γ)
+            x_SAG, it_SAG = solver(x0, F = F, g = g, N = N)
+            @test cost_lasso(x_SAG) - f_star < tol
+            @test eltype(x_SAG) == T
+        end
+
+        # test the iterator 
+        @testset "the iterator" begin
+            γ = 1 / (16 * maximum(L))
+            solver = CIAOAlgorithms.SAG(R, γ = γ)
+            iter = CIAOAlgorithms.iterator(solver, x0, F = F, g = g, N = N)
+            @test iter.x0 === x0
+
+            for state in take(iter, 2)
+                @test solution(state) === state.z
+                @test eltype(solution(state)) == T
+            end
+            next = iterate(iter) # next = (state, state)
+            # one iteration with the solver 
+            solver = CIAOAlgorithms.SAG(R, γ = γ, maxit = 1)
+            x_finito, it_finito = solver(x0, F = F, g = g, L = L, N = N)
+            @test solution(next[2]) == x_finito
+        end
+    end
 end

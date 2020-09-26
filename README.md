@@ -16,7 +16,7 @@ where f_i are smooth, and g is (possibly) nonsmooth with easy to compute proxima
 ### Quick guide
 You can add CIAOAlgorithms by pressing `]` to enter the package manager, then
 ```
-pkg> add https://github.com/kul-forbes/CIAOAlgorithms.jl
+pkg> add CIAOAlgorithms
 ```
 
 Simple Lasso and logisitc regression test examples can be found [here](test). 

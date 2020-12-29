@@ -94,7 +94,7 @@ function Base.iterate(
 ) where {R}
     # manipulating indices 
     if iter.sweeping == 1 # uniformly random    
-        state.ind = [rand(1:iter.N, iter.batch)]
+        state.ind = [sample(1:iter.N, iter.batch, replace = false)]
     elseif iter.sweeping == 2  # cyclic
         state.idxr = mod(state.idxr, state.d) + 1
     elseif iter.sweeping == 3  # shuffled cyclic

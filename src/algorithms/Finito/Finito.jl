@@ -20,6 +20,7 @@ using ProximalAlgorithms.IterationTools
 using Printf
 using Base.Iterators
 using Random
+using StatsBase: sample
 
 export solution
 

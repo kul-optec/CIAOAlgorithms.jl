@@ -1,6 +1,6 @@
 # CIAOAlgorithms.jl
 
-[![Build status](https://github.com/kul-optec/CIAOAlgorithms/workflows/CI/badge.svg)](https://github.com/kul-optec/CIAOAlgorithms/actions?query=workflow%3ACI)
+[![Build status](https://github.com/kul-forbes/CIAOAlgorithms/workflows/CI/badge.svg)](https://github.com/kul-forbes/CIAOAlgorithms/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/kul-optec/CIAOAlgorithms.jl/branch/master/graph/badge.svg?token=WQ3EVRFHIJ)](https://codecov.io/gh/kul-optec/CIAOAlgorithms.jl)
 
 CIAOAlgorithms implements Block-Coordinate and Incremental Aggregated Optimization Algorithms for minimizations of the form

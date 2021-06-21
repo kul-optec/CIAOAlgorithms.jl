@@ -1,7 +1,7 @@
 # CIAOAlgorithms.jl
 
-[![Build status](https://github.com/kul-forbes/CIAOAlgorithms/workflows/CI/badge.svg)](https://github.com/kul-forbes/CIAOAlgorithms/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/kul-forbes/CIAOAlgorithms.jl/branch/master/graph/badge.svg?token=WQ3EVRFHIJ)](https://codecov.io/gh/kul-forbes/CIAOAlgorithms.jl)
+[![Build status](https://github.com/kul-optec/CIAOAlgorithms/workflows/CI/badge.svg)](https://github.com/kul-optec/CIAOAlgorithms/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/kul-optec/CIAOAlgorithms.jl/branch/master/graph/badge.svg?token=WQ3EVRFHIJ)](https://codecov.io/gh/kul-optec/CIAOAlgorithms.jl)
 
 CIAOAlgorithms implements Block-Coordinate and Incremental Aggregated Optimization Algorithms for minimizations of the form
 ```math
@@ -11,7 +11,7 @@ or
 ```math
 minimize    1/N sum_{i=1}^N f_i(x_i) + g(sum_{i=1}^N x_i)
 ``` 
-where f_i are smooth, and g is (possibly) nonsmooth with easy to compute proximal mapping. These functions can be defined using the [ProximalOperators.jl](https://github.com/kul-forbes/ProximalOperators.jl) package. 
+where f_i are smooth, and g is (possibly) nonsmooth with easy to compute proximal mapping. These functions can be defined using the [ProximalOperators.jl](https://github.com/kul-optec/ProximalOperators.jl) package. 
 
 ### Quick guide
 You can add CIAOAlgorithms by pressing `]` to enter the package manager, then

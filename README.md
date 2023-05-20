@@ -4,13 +4,11 @@
 [![codecov](https://codecov.io/gh/kul-optec/CIAOAlgorithms.jl/branch/master/graph/badge.svg?token=WQ3EVRFHIJ)](https://codecov.io/gh/kul-optec/CIAOAlgorithms.jl)
 
 CIAOAlgorithms implements Block-Coordinate and Incremental Aggregated Optimization Algorithms for minimizations of the form
-```math
-minimize    1/N sum_{i=1}^N f_i(x) + g(x)
-``` 
+
+$$\text{minimize } \frac{1}{N} \sum_{i=1}^N f_i(x) + g(x)$$
+
 or 
-```math
-minimize    1/N sum_{i=1}^N f_i(x_i) + g(sum_{i=1}^N x_i)
-``` 
+$$\text{minimize } \frac{1}{N} \sum_{i=1}^N f_i(x_i) + g\big(\sum_{i=1}^N x_i\big)$$
 where f_i are smooth, and g is (possibly) nonsmooth with easy to compute proximal mapping. These functions can be defined using the [ProximalOperators.jl](https://github.com/kul-optec/ProximalOperators.jl) package. 
 
 ### Quick guide
